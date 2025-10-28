@@ -15,31 +15,31 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 // TODO: CHANGE THE TEMPLATE CODE!
 class MoveIt : public rclcpp::Node
 {
 public:
   MoveIt()
-  : Node("minimal_subscriber")
+  : Node("MoveIt")
   {
     auto topic_callback =
-      [this](std_msgs::msg::String::UniquePtr msg) -> void {
-        RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg->data.c_str());
+      [this](geometry_msgs::msg::PoseStamped::UniquePtr msg) -> void {
+        RCLCPP_INFO(this->get_logger(), "I heard x coord '%f'", msg -> pose.position.x);
       };
     subscription_ =
-      this->create_subscription<std_msgs::msg::String>("topic", 10, topic_callback);
+      this->create_subscription<geometry_msgs::msg::PoseStamped>("goal_pose", 10, topic_callback);
   }
 
 private:
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
 };
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<MinimalSubscriber>());
+  rclcpp::spin(std::make_shared<MoveIt>());
   rclcpp::shutdown();
   return 0;
 }

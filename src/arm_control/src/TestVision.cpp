@@ -36,12 +36,12 @@ public:
       [this]() -> void {
         goal_pose_ = geometry_msgs::msg::PoseStamped();
         // remind me to give it actually sensible values
-        goal_pose.pose.position.x=0;
-        goal_pose.pose.position.y=0;
-        goal_pose.pose.position.z=0;
-        goal_pose.pose.orientation.w=0;
+        goal_pose_.pose.position.x=0;
+        goal_pose_.pose.position.y=0;
+        goal_pose_.pose.position.z=0;
+        goal_pose_.pose.orientation.w=0;
         RCLCPP_INFO(this->get_logger(), "Publishing");
-        this->publisher_->publish(goal_pose);
+        this->publisher_->publish(goal_pose_);
       };
     //once per second for debugging purposes, remind me to swap this
     timer_ = this->create_wall_timer(1000ms, timer_callback);

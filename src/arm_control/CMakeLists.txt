@@ -13,12 +13,20 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
+#For Test Vision
 add_executable(vision src/TestVision.cpp)
-ament_target_dependencies(talker rclcpp geometry_msgs)
+ament_target_dependencies(vision rclcpp geometry_msgs)
+
+#For MoveIt
+add_executable(moveIt src/MoveIt.cpp)
+ament_target_dependencies(moveIt rclcpp geometry_msgs)
 
 install(TARGETS
   vision
+  moveIt
   DESTINATION lib/${PROJECT_NAME})
+
+
 
 ament_package()
 
