@@ -2,6 +2,7 @@ devel/
 logs/
 #for some reason its now log
 log/
+
 build/
 bin/
 lib/
@@ -51,3 +52,7 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+# more stuff in .gitignore
+install/
+.vscode/
