@@ -12,6 +12,13 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+
+#For update_goal_item service
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "srv/UpdateGoalItem.srv"
+)
 
 #For Test Vision
 add_executable(vision src/TestVision.cpp)

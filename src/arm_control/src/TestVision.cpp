@@ -19,6 +19,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
+#include "arm_control/srv/update_goal_item.hpp"
+
 using namespace std::chrono_literals;
 
 /* This example creates a subclass of Node and uses a fancy C++11 lambda
@@ -31,20 +33,45 @@ public:
   TestVision()
   : Node("Vision")
   {
+    //initialize some stuff
+    goal_pose_="NA"
+
+    goal_pose_ = geometry_msgs::msg::PoseStamped();
+    // remind me to give it actually sensible values
+    goal_pose_.pose.position.x=0;
+    goal_pose_.pose.position.y=0;
+    goal_pose_.pose.position.z=0;
+    goal_pose_.pose.orientation.w=0;
+
     publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("goal_pose", 10);
     auto timer_callback =
       [this]() -> void {
-        goal_pose_ = geometry_msgs::msg::PoseStamped();
-        // remind me to give it actually sensible values
-        goal_pose_.pose.position.x=0;
-        goal_pose_.pose.position.y=0;
-        goal_pose_.pose.position.z=0;
-        goal_pose_.pose.orientation.w=0;
-        RCLCPP_INFO(this->get_logger(), "Publishing");
-        this->publisher_->publish(goal_pose_);
+        if (goal_item_name_ != "NA") {
+          this->publisher_->publish(goal_pose_);
+          RCLCPP_INFO(this->get_logger(), "Publishing goal for: %s", goal_item_name_.c_str());
+        } else {
+          RCLCPP_DEBUG(this->get_logger(), "No goal item set");
+        }
       };
     //once per second for debugging purposes, remind me to swap this
     timer_ = this->create_wall_timer(1000ms, timer_callback);
+
+    auto update_goal_item = [this](
+        const std::shared_ptr<arm_control::srv::UpdateGoalItem::Request> request,
+        std::shared_ptr<arm_control::srv::UpdateGoalItem::Response> response){
+          RCLCPP_INFO(this->get_logger(), "Received Goal Item: %s", request -> goal_item_name.c_str());
+          goal_item_name_= request -> goal_item_name;
+          // this is where I would double check if the goal item was even in view before setting the response
+          //  but I'll talk to vision about this later
+
+          response -> response=true;
+        };
+
+    service_ = this -> create_service<arm_control::srv::UpdateGoalItem>(
+      "update_goal_item", 
+      update_goal_item
+      );
+    
   }
 
 private:
@@ -52,6 +79,8 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_;
   geometry_msgs::msg::PoseStamped goal_pose_;
 
+  std::string goal_item_name_;
+  rclcpp::Service<arm_control::srv::UpdateGoalItem>::SharedPtr service_;
 };
 
 int main(int argc, char * argv[])
