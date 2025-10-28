@@ -1,5 +1,7 @@
 devel/
 logs/
+#for some reason its now log
+log/
 build/
 bin/
 lib/
