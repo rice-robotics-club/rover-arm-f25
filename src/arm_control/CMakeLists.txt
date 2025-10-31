@@ -19,14 +19,19 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/UpdateGoalItem.srv"
 )
+# Get typesupport target for linking
+rosidl_get_typesupport_target(cpp_typesupport_target
+  ${PROJECT_NAME} rosidl_typesupport_cpp)
 
 #For Test Vision
 add_executable(vision src/TestVision.cpp)
 ament_target_dependencies(vision rclcpp geometry_msgs)
+target_link_libraries(vision "${cpp_typesupport_target}")
 
 #For MoveIt
 add_executable(moveIt src/MoveIt.cpp)
 ament_target_dependencies(moveIt rclcpp geometry_msgs)
+target_link_libraries(moveIt "${cpp_typesupport_target}")
 
 install(TARGETS
   vision

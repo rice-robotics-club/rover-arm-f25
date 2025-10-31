@@ -34,7 +34,7 @@ public:
   : Node("Vision")
   {
     //initialize some stuff
-    goal_pose_="NA"
+    goal_item_name_="NA";
 
     goal_pose_ = geometry_msgs::msg::PoseStamped();
     // remind me to give it actually sensible values
@@ -50,7 +50,7 @@ public:
           this->publisher_->publish(goal_pose_);
           RCLCPP_INFO(this->get_logger(), "Publishing goal for: %s", goal_item_name_.c_str());
         } else {
-          RCLCPP_DEBUG(this->get_logger(), "No goal item set");
+          RCLCPP_INFO(this->get_logger(), "No goal item set");
         }
       };
     //once per second for debugging purposes, remind me to swap this

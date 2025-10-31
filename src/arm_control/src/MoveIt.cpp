@@ -17,6 +17,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
+
+
 // TODO: CHANGE THE TEMPLATE CODE!
 class MoveIt : public rclcpp::Node
 {
@@ -34,6 +36,8 @@ public:
 
 private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
+
+  
 };
 
 int main(int argc, char * argv[])
