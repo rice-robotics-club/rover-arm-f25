@@ -1,0 +1,8 @@
+string goal_item_name
+string planning_component_name
+moveit_msgs/CollisionObject attached_object
+---
+bool success
+moveit_msgs/MoveItErrorCodes error_code
+---
+string status
