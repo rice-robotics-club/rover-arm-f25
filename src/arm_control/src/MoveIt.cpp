@@ -34,6 +34,14 @@ public:
 
     client_ =
       this->create_client<arm_control::srv::UpdateGoalItem>("update_goal_item");
+
+    //FOR TESTING! PLS DELETE ONCE DONE!
+    timer_ = this->create_wall_timer(
+      std::chrono::seconds(2),
+      [this]() {
+        this->changeGoalItem("BRICK");
+        timer_->cancel();  
+      });
   }
   /*
   This is a dummy method just to allow me to check that the update_goal_item service and goal_pose topic work as 
@@ -48,30 +56,31 @@ public:
       }
       RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Waiting");
     }
-    auto result_future = client_->async_send_request(request);
+
     // Wait for the result and check if true
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) ==
-        rclcpp::FutureReturnCode::SUCCESS)
-    {
-      auto result = result_future.get();
-      if (result->response)
-      {
+    auto result_future = client_->async_send_request(request,
+    [this](rclcpp::Client<arm_control::srv::UpdateGoalItem>::SharedFuture future) {
+      auto result = future.get();
+      update_goal_success_=result->response;
+      if (update_goal_success_) {
         RCLCPP_INFO(this->get_logger(), "Updated Goal Item");
-        return true;
       } else {
         RCLCPP_ERROR(this->get_logger(), "Service returned false");
-        return false;
+        update_goal_success_=false;
       }
-    } else {
-      RCLCPP_ERROR(this->get_logger(), "Failed to call service update_goal_item");
-      return false;  
-    }
+    });
+    return update_goal_success_;
   }
 
 private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
 
   rclcpp::Client<arm_control::srv::UpdateGoalItem>::SharedPtr client_;
+
+  //for debug, pls delete
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  bool update_goal_success_;
   
 };
 
