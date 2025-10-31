@@ -13,13 +13,12 @@
 // limitations under the License.
 
 #include <memory>
+#include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-
-
-// TODO: CHANGE THE TEMPLATE CODE!
+#include "arm_control/srv/update_goal_item.hpp"
 class MoveIt : public rclcpp::Node
 {
 public:
@@ -32,11 +31,47 @@ public:
       };
     subscription_ =
       this->create_subscription<geometry_msgs::msg::PoseStamped>("goal_pose", 10, topic_callback);
+
+    client_ =
+      this->create_client<arm_control::srv::UpdateGoalItem>("update_goal_item");
+  }
+  /*
+  This is a dummy method just to allow me to check that the update_goal_item service and goal_pose topic work as 
+  expected*/
+  bool changeGoalItem(std::string goal_item_name){
+    auto request = std::make_shared<arm_control::srv::UpdateGoalItem::Request>();
+    request -> goal_item_name=goal_item_name;
+    while (!client_->wait_for_service(std::chrono::seconds(1))) {
+      if (!rclcpp::ok()) {
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+        return false;
+      }
+      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Waiting");
+    }
+    auto result_future = client_->async_send_request(request);
+    // Wait for the result and check if true
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) ==
+        rclcpp::FutureReturnCode::SUCCESS)
+    {
+      auto result = result_future.get();
+      if (result->response)
+      {
+        RCLCPP_INFO(this->get_logger(), "Updated Goal Item");
+        return true;
+      } else {
+        RCLCPP_ERROR(this->get_logger(), "Service returned false");
+        return false;
+      }
+    } else {
+      RCLCPP_ERROR(this->get_logger(), "Failed to call service update_goal_item");
+      return false;  
+    }
   }
 
 private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
 
+  rclcpp::Client<arm_control::srv::UpdateGoalItem>::SharedPtr client_;
   
 };
 
