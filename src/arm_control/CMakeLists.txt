@@ -11,17 +11,20 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 
-#For update_goal_item service
+#For the services and actions
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/UpdateGoalItem.srv"
   "action/ArmMovement.action"
   DEPENDENCIES moveit_msgs
 )
+
 # Get typesupport target for linking
 rosidl_get_typesupport_target(cpp_typesupport_target
   ${PROJECT_NAME} rosidl_typesupport_cpp)
@@ -31,15 +34,35 @@ add_executable(vision src/TestVision.cpp)
 ament_target_dependencies(vision rclcpp geometry_msgs)
 target_link_libraries(vision "${cpp_typesupport_target}")
 
-#For MoveIt
-add_executable(moveIt src/MoveIt.cpp)
-ament_target_dependencies(moveIt rclcpp geometry_msgs)
+#For MoveIt, has to be a library to turn it into an action server
+add_library(moveIt SHARED 
+src/MoveIt.cpp)
+#for the stuff in the include folder
+target_include_directories(moveIt PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+ament_target_dependencies(moveIt 
+  rclcpp 
+  rclcpp_action
+  rclcpp_components
+  geometry_msgs 
+  moveit_msgs)
 target_link_libraries(moveIt "${cpp_typesupport_target}")
+#make it executable
+rclcpp_components_register_node(moveIt 
+  PLUGIN "arm_control::MoveItActionServer" 
+  EXECUTABLE moveit_action_server)
 
+#install vision
 install(TARGETS
   vision
-  moveIt
   DESTINATION lib/${PROJECT_NAME})
+#install moveIt lib (which is also an executable)
+install(TARGETS
+  moveIt
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
 
 
 

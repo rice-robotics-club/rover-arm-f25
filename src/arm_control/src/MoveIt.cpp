@@ -14,11 +14,21 @@
 
 #include <memory>
 #include <chrono>
+#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "moveit_msgs/msg/collision_object.hpp"
+#include "moveit_msgs/msg/move_it_error_codes.hpp"
 
 #include "arm_control/srv/update_goal_item.hpp"
+#include "arm_control/action/arm_movement.hpp"
+
+#include "arm_control/visibility_control.h"
+
 class MoveIt : public rclcpp::Node
 {
 public:
