@@ -12,12 +12,15 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(moveit_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 
 #For update_goal_item service
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/UpdateGoalItem.srv"
+  "action/ArmMovement.action"
+  DEPENDENCIES moveit_msgs
 )
 # Get typesupport target for linking
 rosidl_get_typesupport_target(cpp_typesupport_target
