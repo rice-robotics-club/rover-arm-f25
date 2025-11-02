@@ -43,7 +43,6 @@ public:
     //or node namespaces etc
     auto topic_callback =
       [this](geometry_msgs::msg::PoseStamped::UniquePtr msg) -> void {
-        RCLCPP_INFO(this->get_logger(), "topic read");
         goal_pose_=*msg;
         RCLCPP_INFO(this->get_logger(), "I heard x coord '%f'", goal_pose_.pose.position.x);
       };
@@ -59,7 +58,7 @@ public:
       [this]() {
         //has to be in a thread or the callback is never processed
         std::thread{[this](){
-          this->changeGoalItem("BRICK");   // blocking version OK here
+          this->changeGoalItem("BRICK");  
         }}.detach();
         timer_->cancel();  
       });
@@ -122,7 +121,10 @@ private:
     const auto goal = goal_handle->get_goal();
     auto feedback = std::make_shared<ArmMovement::Feedback>();
     auto result = std::make_shared<ArmMovement::Result>();
-    this->changeGoalItem(goal->goal_item_name);
+    //has to be in a thread or the callback is never processed
+    std::thread{[this, goal](){
+      this->changeGoalItem(goal->goal_item_name);  
+    }}.detach();
     //check for termiante
     if (shouldTerminate()){
       return;
@@ -185,7 +187,7 @@ private:
       RCLCPP_ERROR(this->get_logger(), "Timed out waiting for UpdateGoalItem service response");
       return false;
     }
-    auto result =future.get()
+    auto result =future.get();
   
     if (result->response) {
       RCLCPP_INFO(this->get_logger(), "Updated Goal Item");
