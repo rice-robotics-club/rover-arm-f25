@@ -48,10 +48,10 @@ public:
         RCLCPP_INFO(this->get_logger(), "I heard x coord '%f'", goal_pose_.pose.position.x);
       };
     subscription_ =
-      this->create_subscription<geometry_msgs::msg::PoseStamped>("goal_pose", 10, topic_callback);
+      this->create_subscription<geometry_msgs::msg::PoseStamped>("/goal_pose", 10, topic_callback);
 
     client_ =
-      this->create_client<arm_control::srv::UpdateGoalItem>("update_goal_item");
+      this->create_client<arm_control::srv::UpdateGoalItem>("/update_goal_item");
 
     //FOR TESTING! PLS DELETE ONCE DONE!
     timer_ = this->create_wall_timer(
@@ -120,21 +120,24 @@ private:
     auto feedback = std::make_shared<ArmMovement::Feedback>();
     auto result = std::make_shared<ArmMovement::Result>();
     this->changeGoalItem(goal->goal_item_name);
-
+    //check for termiante
+    if (shouldTerminate()){
+      return;
+    }
     //for testing, pls change!
     int maxLoops=1;
     //swap for a ExectionStatus object that is casted to a string
     feedback->status = "UNKNOWN";
-    
     for (int loop=0; loop<maxLoops && rclcpp::ok(); loop++){
+      //check for termiante
+      if (shouldTerminate()){
+        return;
+      }
       if (goal_handle->is_canceling()){
         result->success=false;
         result->error_code.val = moveit_msgs::msg::MoveItErrorCodes::ABORT;
         result->error_code.message = "Cancelled successfully";
         result->error_code.source = "MoveIt node";
-
-        //to terminate the node when Ctrl C is pressed
-        return;
       }
       goal_handle->publish_feedback(feedback);
       loop_rate.sleep();
@@ -144,6 +147,10 @@ private:
     result->error_code.message= "Successfully performed movement";
     result->error_code.source = "MoveIt node";
 
+    //check for termiante
+    if (shouldTerminate()){
+      return;
+    }
     //when goal is done
     if (rclcpp::ok()) {
       //tell vision to stop publishing
@@ -161,11 +168,11 @@ private:
     auto request = std::make_shared<arm_control::srv::UpdateGoalItem::Request>();
     request -> goal_item_name=goal_item_name;
     while (!client_->wait_for_service(std::chrono::seconds(1))) {
-      if (!rclcpp::ok()) {
+      if (shouldTerminate()) {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
         return false;
       }
-      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Waiting");
+      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Waiting for UpdateGoalItem");
     }
 
     // Wait for the result and check if true
@@ -178,6 +185,14 @@ private:
       RCLCPP_ERROR(this->get_logger(), "Service returned false");
       return false;
     }
+    /**
+     * This is a method to detect if Ctrl C is pressed because for some god damn
+     * reason the node doesn't automatically stop when ctrl C is pressed
+     * Returns true if Ctrl C was detected
+     */
+  }
+  bool shouldTerminate(){
+    return !rclcpp::ok();
   }
 };
 }

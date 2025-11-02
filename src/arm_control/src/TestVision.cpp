@@ -43,7 +43,7 @@ public:
     goal_pose_.pose.position.z=0;
     goal_pose_.pose.orientation.w=0;
 
-    publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("goal_pose", 10);
+    publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/goal_pose", 10);
     auto timer_callback =
       [this]() -> void {
         if (goal_item_name_ != "NA") {
@@ -69,7 +69,7 @@ public:
         };
 
     service_ = this -> create_service<arm_control::srv::UpdateGoalItem>(
-      "update_goal_item", 
+      "/update_goal_item", 
       update_goal_item
       );
     
