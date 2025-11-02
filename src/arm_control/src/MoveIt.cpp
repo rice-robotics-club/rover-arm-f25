@@ -57,7 +57,10 @@ public:
     timer_ = this->create_wall_timer(
       std::chrono::seconds(2),
       [this]() {
-        this->changeGoalItem("BRICK");
+        //has to be in a thread or the callback is never processed
+        std::thread{[this](){
+          this->changeGoalItem("BRICK");   // blocking version OK here
+        }}.detach();
         timer_->cancel();  
       });
 
@@ -167,7 +170,7 @@ private:
   bool changeGoalItem(std::string goal_item_name){
     auto request = std::make_shared<arm_control::srv::UpdateGoalItem::Request>();
     request -> goal_item_name=goal_item_name;
-    while (!client_->wait_for_service(std::chrono::seconds(1))) {
+    while (!client_->wait_for_service(std::chrono::seconds(3))) {
       if (shouldTerminate()) {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
         return false;
@@ -175,8 +178,14 @@ private:
       RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Waiting for UpdateGoalItem");
     }
 
-    // Wait for the result and check if true
-    auto result = client_->async_send_request(request).get();  // Block until result
+    auto future = client_->async_send_request(request);
+
+    // Wait up to 5 seconds
+    if (future.wait_for(std::chrono::seconds(5)) != std::future_status::ready) {
+      RCLCPP_ERROR(this->get_logger(), "Timed out waiting for UpdateGoalItem service response");
+      return false;
+    }
+    auto result =future.get()
   
     if (result->response) {
       RCLCPP_INFO(this->get_logger(), "Updated Goal Item");
@@ -185,12 +194,13 @@ private:
       RCLCPP_ERROR(this->get_logger(), "Service returned false");
       return false;
     }
-    /**
+    
+  }
+  /**
      * This is a method to detect if Ctrl C is pressed because for some god damn
      * reason the node doesn't automatically stop when ctrl C is pressed
      * Returns true if Ctrl C was detected
      */
-  }
   bool shouldTerminate(){
     return !rclcpp::ok();
   }
