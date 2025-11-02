@@ -50,8 +50,8 @@ ament_target_dependencies(moveIt
 target_link_libraries(moveIt "${cpp_typesupport_target}")
 #make it executable
 rclcpp_components_register_node(moveIt 
-  PLUGIN "arm_control::MoveItActionServer" 
-  EXECUTABLE moveit_action_server)
+  PLUGIN "arm_control_cpp::MoveIt" 
+  EXECUTABLE moveItNode)
 
 #install vision
 install(TARGETS

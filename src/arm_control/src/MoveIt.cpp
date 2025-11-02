@@ -29,15 +29,23 @@
 
 #include "arm_control/visibility_control.h"
 
+namespace arm_control_cpp{
 class MoveIt : public rclcpp::Node
 {
 public:
-  MoveIt()
-  : Node("MoveIt")
+  using ArmMovement = arm_control::action::ArmMovement;
+  using GoalHandleArm = rclcpp_action::ServerGoalHandle<ArmMovement>;
+
+  explicit MoveIt(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
+  : Node("MoveIt", options)
   {
+    //options will give you a warning that it's unused. apparently its helpful if we decide to remap topics
+    //or node namespaces etc
     auto topic_callback =
       [this](geometry_msgs::msg::PoseStamped::UniquePtr msg) -> void {
-        RCLCPP_INFO(this->get_logger(), "I heard x coord '%f'", msg -> pose.position.x);
+        RCLCPP_INFO(this->get_logger(), "topic read");
+        goal_pose_=*msg;
+        RCLCPP_INFO(this->get_logger(), "I heard x coord '%f'", goal_pose_.pose.position.x);
       };
     subscription_ =
       this->create_subscription<geometry_msgs::msg::PoseStamped>("goal_pose", 10, topic_callback);
@@ -52,10 +60,103 @@ public:
         this->changeGoalItem("BRICK");
         timer_->cancel();  
       });
+
+    using namespace std::placeholders;
+    auto handle_goal = [this](
+      const rclcpp_action::GoalUUID & uuid,
+      std::shared_ptr<const ArmMovement::Goal> goal
+    ){
+      RCLCPP_INFO(this ->get_logger(), "Goal item: %s", goal->goal_item_name.c_str());
+      RCLCPP_INFO(this ->get_logger(), "Planning Component: %s", goal->planning_component_name.c_str());
+      (void) uuid;
+      return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    };
+
+    auto handle_cancel = [this](
+      const std::shared_ptr<GoalHandleArm> goal_handle
+    ){
+      RCLCPP_INFO(this->get_logger(), "Cancelling goal");
+      (void) goal_handle;
+      return rclcpp_action::CancelResponse::ACCEPT;
+    };
+    auto handle_accepted = [this](
+    const std::shared_ptr<GoalHandleArm> goal_handle
+    )
+    {
+      // this needs to return quickly to avoid blocking the executor,
+      // so we declare a lambda function to be called inside a new thread
+      auto execute_in_thread = [this, goal_handle](){return this->execute(goal_handle);};
+      std::thread{execute_in_thread}.detach();
+    };
+    this->action_server_ = rclcpp_action::create_server<ArmMovement>(
+      this,
+      "arm_movement",
+      handle_goal,
+      handle_cancel,
+      handle_accepted);
   }
-  /*
-  This is a dummy method just to allow me to check that the update_goal_item service and goal_pose topic work as 
-  expected*/
+
+private:
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
+
+  rclcpp::Client<arm_control::srv::UpdateGoalItem>::SharedPtr client_;
+
+  rclcpp_action::Server<ArmMovement>::SharedPtr action_server_;
+
+  //for debug, pls delete
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  bool update_goal_success_;
+
+  geometry_msgs::msg::PoseStamped goal_pose_;
+  
+  /**
+   * This will eventually become the code I written down in the pseudocode doc
+   */
+  void execute(const std::shared_ptr<GoalHandleArm> goal_handle) {
+    RCLCPP_INFO(this->get_logger(), "Executing");
+    rclcpp::Rate loop_rate(1);
+    const auto goal = goal_handle->get_goal();
+    auto feedback = std::make_shared<ArmMovement::Feedback>();
+    auto result = std::make_shared<ArmMovement::Result>();
+    this->changeGoalItem(goal->goal_item_name);
+
+    //for testing, pls change!
+    int maxLoops=1;
+    //swap for a ExectionStatus object that is casted to a string
+    feedback->status = "UNKNOWN";
+    
+    for (int loop=0; loop<maxLoops && rclcpp::ok(); loop++){
+      if (goal_handle->is_canceling()){
+        result->success=false;
+        result->error_code.val = moveit_msgs::msg::MoveItErrorCodes::ABORT;
+        result->error_code.message = "Cancelled successfully";
+        result->error_code.source = "MoveIt node";
+
+        //to terminate the node when Ctrl C is pressed
+        return;
+      }
+      goal_handle->publish_feedback(feedback);
+      loop_rate.sleep();
+    }
+    result->success=true;
+    result->error_code.val= moveit_msgs::msg::MoveItErrorCodes::SUCCESS;
+    result->error_code.message= "Successfully performed movement";
+    result->error_code.source = "MoveIt node";
+
+    //when goal is done
+    if (rclcpp::ok()) {
+      //tell vision to stop publishing
+      this->changeGoalItem("NA");
+      goal_handle->succeed(result);
+      RCLCPP_INFO(this->get_logger(), "Goal succeeded");
+    }
+  };
+
+  /** 
+   * This is a method to change the call the UpdateGoalItem service
+   * @param goal_item_name A string to represent the name of the goal item the Vision node should find
+  */
   bool changeGoalItem(std::string goal_item_name){
     auto request = std::make_shared<arm_control::srv::UpdateGoalItem::Request>();
     request -> goal_item_name=goal_item_name;
@@ -68,36 +169,16 @@ public:
     }
 
     // Wait for the result and check if true
-    auto result_future = client_->async_send_request(request,
-    [this](rclcpp::Client<arm_control::srv::UpdateGoalItem>::SharedFuture future) {
-      auto result = future.get();
-      update_goal_success_=result->response;
-      if (update_goal_success_) {
-        RCLCPP_INFO(this->get_logger(), "Updated Goal Item");
-      } else {
-        RCLCPP_ERROR(this->get_logger(), "Service returned false");
-        update_goal_success_=false;
-      }
-    });
-    return update_goal_success_;
-  }
-
-private:
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
-
-  rclcpp::Client<arm_control::srv::UpdateGoalItem>::SharedPtr client_;
-
-  //for debug, pls delete
-  rclcpp::TimerBase::SharedPtr timer_;
-
-  bool update_goal_success_;
+    auto result = client_->async_send_request(request).get();  // Block until result
   
+    if (result->response) {
+      RCLCPP_INFO(this->get_logger(), "Updated Goal Item");
+      return true;
+    } else {
+      RCLCPP_ERROR(this->get_logger(), "Service returned false");
+      return false;
+    }
+  }
 };
-
-int main(int argc, char * argv[])
-{
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<MoveIt>());
-  rclcpp::shutdown();
-  return 0;
 }
+RCLCPP_COMPONENTS_REGISTER_NODE(arm_control_cpp::MoveIt);
