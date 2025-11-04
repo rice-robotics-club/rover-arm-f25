@@ -4,7 +4,7 @@ from moveit_configs_utils import MoveItConfigsBuilder
 
 def generate_launch_description():
     moveit_config = MoveItConfigsBuilder("moveit_resources_panda").to_dict()
-    launch_params = {'task': 'pick_place'}
+    launch_params = {'task': 'twist_knob'}
 
     # MTC Demo node
     pick_place_demo = Node(

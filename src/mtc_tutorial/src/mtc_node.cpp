@@ -24,6 +24,16 @@ static const rclcpp::Logger LOGGER = rclcpp::get_logger("mtc_tutorial");
 MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   : node_{ std::make_shared<rclcpp::Node>("mtc_node", options) }
 {
+  // Initialize Tasks
+  task_map_.emplace("pick_place", TaskEntry{
+    std::bind(&MTCTaskNode::createPickPlaceTask, this),
+    std::bind(&MTCTaskNode::setupPickPlaceScene, this)
+  });
+
+  task_map_.emplace("twist_knob", TaskEntry{
+    std::bind(&MTCTaskNode::createTwistKnobTask, this),
+    std::bind(&MTCTaskNode::setupTwistKnobScene, this)
+  });
 }
 
 rclcpp::node_interfaces::NodeBaseInterface::SharedPtr MTCTaskNode::getNodeBaseInterface()
@@ -31,27 +41,36 @@ rclcpp::node_interfaces::NodeBaseInterface::SharedPtr MTCTaskNode::getNodeBaseIn
   return node_->get_node_base_interface();
 }
 
-void MTCTaskNode::setupPlanningScene()
+rclcpp::Node::SharedPtr MTCTaskNode::getNode() {
+  return node_;
+}
+
+void MTCTaskNode::setupPlanningScene(const std::string &task_name)
 {
-  moveit_msgs::msg::CollisionObject object;
-  object.id = "object";
-  object.header.frame_id = "world";
-  object.primitives.resize(1);
-  object.primitives[0].type = shape_msgs::msg::SolidPrimitive::CYLINDER;
-  object.primitives[0].dimensions = { 0.1, 0.02 };
+  auto it = task_map_.find(task_name);
+  if (it != task_map_.end()) {
+    it->second.setup_scene();
+  }
 
-  geometry_msgs::msg::Pose pose;
-  pose.position.x = 0.5;
-  pose.position.y = -0.25;
-  pose.orientation.w = 1.0;
-  object.pose = pose;
+  // Default to pickplace for now
+  RCLCPP_WARN(LOGGER, "Unknown task_name %s, default to pick_place task", task_name.c_str());
+  setupPickPlaceScene();
+}
 
-  moveit::planning_interface::PlanningSceneInterface psi;
-  psi.applyCollisionObject(object);
+mtc::Task MTCTaskNode::createTask(const std::string &task_name) {
+  auto it = task_map_.find(task_name);
+  if (it != task_map_.end()) {
+    return it->second.create_task();
+  }
+
+  // Default to pickplace for now
+  RCLCPP_WARN(LOGGER, "Unknown task_name %s, default to pick_place task", task_name.c_str());
+  return createPickPlaceTask();
 }
 
 void MTCTaskNode::doTask(const std::string &task_name)
 {
+  setupPlanningScene(task_name);
   task_ = createTask(task_name);
 
   try
@@ -81,19 +100,6 @@ void MTCTaskNode::doTask(const std::string &task_name)
   return;
 }
 
-mtc::Task MTCTaskNode::createTask(const std::string &task_name) {
-  if (task_name == "pick_place") {
-    return createPickPlaceTask();
-  }
-  else if (task_name == "twist_knob") {
-    return createTwistKnobTask();
-  } else {
-    // Default to pickplace for now
-    RCLCPP_WARN(LOGGER, "Default to pick_place task");
-    return createPickPlaceTask();
-  }
-}
-
 int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
@@ -110,8 +116,10 @@ int main(int argc, char** argv)
     executor.remove_node(mtc_task_node->getNodeBaseInterface());
   });
 
-  mtc_task_node->setupPlanningScene();
-  mtc_task_node->doTask("pick_place");
+  std::string task_name = "pick_place";
+  mtc_task_node->getNode()->get_parameter_or("task", task_name, task_name);
+
+  mtc_task_node->doTask(task_name);
 
   spin_thread->join();
   rclcpp::shutdown();

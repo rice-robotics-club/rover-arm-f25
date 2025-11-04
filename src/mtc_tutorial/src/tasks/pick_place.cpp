@@ -19,6 +19,26 @@
 // mtc node class
 #include "../mtc_node.hpp"
 
+void MTCTaskNode::setupPickPlaceScene()
+{
+  moveit_msgs::msg::CollisionObject object;
+  object.id = "object";
+  object.header.frame_id = "world";
+  object.primitives.resize(1);
+  object.primitives[0].type = shape_msgs::msg::SolidPrimitive::CYLINDER;
+  object.primitives[0].dimensions = { 0.1, 0.02 };
+
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 0.5;
+  pose.position.y = -0.25;
+  pose.orientation.w = 1.0;
+  object.pose = pose;
+
+  moveit::planning_interface::PlanningSceneInterface psi;
+  psi.applyCollisionObject(object);
+}
+
+
 mtc::Task MTCTaskNode::createPickPlaceTask()
 {
   mtc::Task task;
