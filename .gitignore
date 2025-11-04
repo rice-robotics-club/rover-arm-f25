@@ -49,3 +49,16 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+# vscode
+.vscode
+
+# dependency packages
+src/moveit_resources
+src/moveit_task_constructor
+src/moveit2_tutorials
+
+# ignoring install, build, and log folders created when you colcon build
+/build
+/install
+/log

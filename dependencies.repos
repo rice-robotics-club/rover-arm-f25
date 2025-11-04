@@ -1,0 +1,15 @@
+repositories:
+  moveit2_tutorials:
+    type: git
+    url: https://github.com/moveit/moveit2_tutorials.git
+    version: main
+
+  moveit_resources:
+    type: git
+    url: https://github.com/moveit/moveit_resources.git
+    version: ros2
+  
+  moveit_task_constructor:
+    type: git
+    url: https://github.com/moveit/moveit_task_constructor.git
+    version: jazzy
