@@ -59,8 +59,4 @@ If you are getting red squiggles on `#include` lines (C/C++ errors), you need to
 
 ## ▶️ Running the Pick + Place Demo
 
-Open two separate terminals, source your environment in both, and run the following commands:
-
-**Terminal 1: Start the MoveIt Environment**
-```bash
-ros2 launch moveit2_tutorials mtc_demo.launch.py
+Check out instructions in the `/mtc_tutorial` folder `README.md` file. 
