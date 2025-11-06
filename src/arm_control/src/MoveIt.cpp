@@ -43,6 +43,7 @@ public:
     //or node namespaces etc
     auto topic_callback =
       [this](geometry_msgs::msg::PoseStamped::UniquePtr msg) -> void {
+        //copy the value from the pointer
         goal_pose_=*msg;
         RCLCPP_INFO(this->get_logger(), "I heard x coord '%f'", goal_pose_.pose.position.x);
       };
