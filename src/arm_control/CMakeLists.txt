@@ -14,6 +14,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
@@ -33,6 +34,12 @@ rosidl_get_typesupport_target(cpp_typesupport_target
 add_executable(vision src/TestVision.cpp)
 ament_target_dependencies(vision rclcpp geometry_msgs)
 target_link_libraries(vision "${cpp_typesupport_target}")
+
+# For keyboard reading
+add_executable(keyboard_reader src/KeyboardReader.cpp)
+target_link_libraries(keyboard_reader PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
+
+
 
 #For MoveIt, has to be a library to turn it into an action server
 add_library(moveIt SHARED 
@@ -55,8 +62,12 @@ rclcpp_components_register_node(moveIt
 
 #install vision
 install(TARGETS
+  keyboard_reader
   vision
   DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME})
 #install moveIt lib (which is also an executable)
 install(TARGETS
   moveIt
