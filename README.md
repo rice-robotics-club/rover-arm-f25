@@ -1,5 +1,13 @@
 # Rover Arm Fall 25
 [Link to Node Diagram](https://docs.google.com/presentation/d/15b-iz1ovfDO4KFOj-s4Y4iy0UtaOKQtQMYVCW6hXz68/edit?slide=id.g38d27cd0724_0_2#slide=id.g38d27cd0724_0_2)
+# Installs
+Install ROS2 Jazzy
+Install the following moveit dependencies
+```
+sudo apt install ros-$ROS_DISTRO-moveit-ros-control-interface
+sudo apt install ros-$ROS_DISTRO-moveit-ros-planning-interface
+sudo apt install ros-$ROS_DISTRO-moveit-core
+```
 # How to test
 Make package
 ```
