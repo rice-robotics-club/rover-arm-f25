@@ -15,14 +15,18 @@
 #include <memory>
 #include <chrono>
 #include <functional>
-
+//ros stuff
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
-
+//messages
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "moveit_msgs/msg/collision_object.hpp"
 #include "moveit_msgs/msg/move_it_error_codes.hpp"
+//moveitstuff
+#include <moveit/controller_manager/controller_manager.hpp>
+#include <moveit/moveit_cpp/moveit_cpp.hpp>
+#include <moveit/moveit_cpp/planning_component.hpp>
 
 #include "arm_control/srv/update_goal_item.hpp"
 #include "arm_control/action/arm_movement.hpp"
@@ -106,17 +110,19 @@ private:
 
   rclcpp_action::Server<ArmMovement>::SharedPtr action_server_;
 
+  geometry_msgs::msg::PoseStamped goal_pose_;
+
   //for debug, pls delete
   rclcpp::TimerBase::SharedPtr timer_;
-
-  bool update_goal_success_;
-
-  geometry_msgs::msg::PoseStamped goal_pose_;
   
   /**
    * This will eventually become the code I written down in the pseudocode doc
    */
   void execute(const std::shared_ptr<GoalHandleArm> goal_handle) {
+    //for readability
+    using moveit_controller_manager::ExecutionStatus;
+    using moveit_msgs::msg::MoveItErrorCodes;
+
     RCLCPP_INFO(this->get_logger(), "Executing");
     rclcpp::Rate loop_rate(1);
     const auto goal = goal_handle->get_goal();
@@ -130,10 +136,10 @@ private:
     if (shouldTerminate()){
       return;
     }
-    //for testing, pls change!
-    int maxLoops=1;
-    //swap for a ExectionStatus object that is casted to a string
-    feedback->status = "UNKNOWN";
+    ExecutionStatus status = ExecutionStatus(ExecutionStatus::RUNNING);
+
+    //FOR TESTING, PLS CHANGE!
+    int maxLoops=5;
     for (int loop=0; loop<maxLoops && rclcpp::ok(); loop++){
       //check for termiante
       if (shouldTerminate()){
@@ -141,15 +147,17 @@ private:
       }
       if (goal_handle->is_canceling()){
         result->success=false;
-        result->error_code.val = moveit_msgs::msg::MoveItErrorCodes::ABORT;
+        result->error_code.val = MoveItErrorCodes::ABORT;
         result->error_code.message = "Cancelled successfully";
         result->error_code.source = "MoveIt node";
       }
+      feedback->status = status.asString();
       goal_handle->publish_feedback(feedback);
       loop_rate.sleep();
     }
-    result->success=true;
-    result->error_code.val= moveit_msgs::msg::MoveItErrorCodes::SUCCESS;
+    //autocasts the ExecutionStatus object to a boolean. Is true when SUCCEEDED, false otherwise
+    result->success=status;
+    result->error_code.val= MoveItErrorCodes::SUCCESS;
     result->error_code.message= "Successfully performed movement";
     result->error_code.source = "MoveIt node";
 

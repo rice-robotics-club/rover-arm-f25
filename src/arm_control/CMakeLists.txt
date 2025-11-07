@@ -16,6 +16,9 @@ find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
+find_package(moveit_core REQUIRED)
+find_package(moveit_ros_planning_interface)
+find_package(moveit_ros_control_interface REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 
@@ -55,7 +58,11 @@ ament_target_dependencies(moveIt
   rclcpp_action
   rclcpp_components
   geometry_msgs 
-  moveit_msgs)
+  moveit_msgs
+  moveit_core
+  moveit_ros_planning_interface
+  moveit_ros_control_interface
+  )
 target_link_libraries(moveIt "${cpp_typesupport_target}")
 #make it executable
 rclcpp_components_register_node(moveIt 
