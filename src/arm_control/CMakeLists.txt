@@ -39,6 +39,8 @@ target_link_libraries(vision "${cpp_typesupport_target}")
 add_executable(keyboard_reader src/KeyboardReader.cpp)
 target_link_libraries(keyboard_reader PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
 
+add_executable(action_interpreter src/ActionInterpreter.cpp)
+target_link_libraries(action_interpreter PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
 
 
 #For MoveIt, has to be a library to turn it into an action server
@@ -63,6 +65,7 @@ rclcpp_components_register_node(moveIt
 #install vision
 install(TARGETS
   keyboard_reader
+  action_interpreter
   vision
   DESTINATION lib/${PROJECT_NAME})
 
