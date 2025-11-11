@@ -54,6 +54,12 @@ Task goToStart(const rclcpp::Node::SharedPtr& node) {
 	const std::string eef = "hand";
 
 	// start from a fixed robot state
+
+	// does this code forcibly reset the position of all joints to the 
+	// "ready" state? this code is NOT WORKING, change to use joint
+	// interpolation to move back to original state, but figure out 
+	// how this works next time
+
 	t.loadRobotModel(node);
 	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
 	auto& state = scene->getCurrentStateNonConst();
