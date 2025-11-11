@@ -86,7 +86,7 @@ moveit::planning_interface::PlanningSceneInterface psi;
 
   knob_object.primitives.resize(1);
   knob_object.primitives[0].type = shape_msgs::msg::SolidPrimitive::BOX;
-  knob_object.primitives[0].dimensions = { KNOB_THICKNESS, 0.08, 0.03 }; 
+  knob_object.primitives[0].dimensions = { KNOB_THICKNESS, 0.03, 0.08 }; 
 
   geometry_msgs::msg::Pose knob_pose;
   // Position it in front of the axle's end. Axle runs from X=0.435 to X=0.475.
@@ -171,10 +171,13 @@ mtc::Task MTCTaskNode::createTwistKnobTask()
       stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
       stage->setMinMaxDistance(0.1, 0.15);
 
-      // set hand forward direction
+      // Approach perpendicular to the knob's face (along negative X in world frame)
+      // The knob's thin dimension (0.02m) is along X-axis, so we approach from +X toward -X
       geometry_msgs::msg::Vector3Stamped vec;
-      vec.header.frame_id = hand_frame;
-      vec.vector.z = 1.0;
+      vec.header.frame_id = "world";  // Use world frame for consistent direction
+      vec.vector.x = 1.0;
+      vec.vector.y = 0.0;
+      vec.vector.z = 0.0;
       stage->setDirection(vec);
 
       grasp->insert(std::move(stage));
@@ -185,7 +188,8 @@ mtc::Task MTCTaskNode::createTwistKnobTask()
       stage->properties().configureInitFrom(mtc::Stage::PARENT);
       stage->properties().set("marker_ns", "grasp_pose");
       stage->setPreGraspPose("open");
-      stage->setObject("object");
+      // Use the same object id as inserted into the planning scene in setupTwistKnobScene
+      stage->setObject("rectangular_knob");
       stage->setAngleDelta(M_PI / 12);
       stage->setMonitoredStage(current_state_ptr);  // Hook into current state
 
@@ -208,8 +212,14 @@ mtc::Task MTCTaskNode::createTwistKnobTask()
 
     {
       auto stage =
-          std::make_unique<mtc::stages::ModifyPlanningScene>("allow collision (hand,object)");
-      stage->allowCollisions("object",
+        std::make_unique<mtc::stages::ModifyPlanningScene>("allow collision (hand,object)");
+      // Allow collisions between the hand and the knob itself (so fingers can overlap the knob)
+      stage->allowCollisions("rectangular_knob",
+                            task.getRobotModel()
+                                ->getJointModelGroup(hand_group_name)
+                                ->getLinkModelNamesWithCollisionGeometry(),
+                            true);
+      stage->allowCollisions("knob_axle",
                             task.getRobotModel()
                                 ->getJointModelGroup(hand_group_name)
                                 ->getLinkModelNamesWithCollisionGeometry(),
@@ -226,12 +236,88 @@ mtc::Task MTCTaskNode::createTwistKnobTask()
 
     {
       auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("attach knob");
-      stage->attachObject("knob_object", hand_frame);
+      // Attach the knob placed into the planning scene (id: rectangular_knob)
+      stage->attachObject("rectangular_knob", hand_frame);
       attach_object_stage = stage.get();
       grasp->insert(std::move(stage));
     }
 
+    {
+      auto stage = std::make_unique<mtc::stages::MoveRelative>("twist knob", cartesian_planner);
+      stage->properties().set("marker_ns", "twist_knob");
+      stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
+
+      geometry_msgs::msg::TwistStamped twist_direction;
+      twist_direction.header.frame_id = hand_frame;
+
+      twist_direction.twist.angular.x = 0;
+      twist_direction.twist.angular.y = 0;
+      twist_direction.twist.angular.z = 1.0;
+
+      twist_direction.twist.linear.x = 0;
+      twist_direction.twist.linear.y = 0;
+      twist_direction.twist.linear.z = 0;
+
+      stage->setDirection(twist_direction);
+
+      stage->setIKFrame(hand_frame);
+      const double rotation_threshold = 0.05;
+      stage->setMinMaxDistance(M_PI_2, M_PI_2);
+
+      grasp->insert(std::move(stage));
+    }
+
+
     task.add(std::move(grasp));
+  }
+
+  {
+    auto release = std::make_unique<mtc::SerialContainer>("release knob");
+    task.properties().exposeTo(release->properties(), { "eef", "group", "ik_frame" });
+    release->properties().configureInitFrom(mtc::Stage::PARENT, { "eef", "group", "ik_frame" });
+    
+    {
+      auto stage = std::make_unique<mtc::stages::MoveTo>("open hand", interpolation_planner);
+      stage->setGroup(hand_group_name);
+      stage->setGoal("open");
+      release->insert(std::move(stage));
+    }
+
+    {
+      auto stage =
+          std::make_unique<mtc::stages::ModifyPlanningScene>("forbid collision (hand,knob)");
+      stage->allowCollisions("rectangular_knob",
+                            task.getRobotModel()
+                                ->getJointModelGroup(hand_group_name)
+                                ->getLinkModelNamesWithCollisionGeometry(),
+                            false);
+      release->insert(std::move(stage));
+    }
+
+    {
+      auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("detach knob");
+      stage->detachObject("rectangular_knob", hand_frame);
+      release->insert(std::move(stage));
+    }
+
+    {
+      auto stage = std::make_unique<mtc::stages::MoveRelative>("retreat", cartesian_planner);
+      stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
+      stage->setMinMaxDistance(0.1, 0.15);
+      stage->setIKFrame(hand_frame);
+      stage->properties().set("marker_ns", "retreat");
+
+      // Retreat in positive X direction (away from panel)
+      geometry_msgs::msg::Vector3Stamped vec;
+      vec.header.frame_id = "world";
+      vec.vector.x = -1.0;
+      vec.vector.y = 0.0;
+      vec.vector.z = 0.0;
+      stage->setDirection(vec);
+      release->insert(std::move(stage));
+    }
+
+    task.add(std::move(release));
   }
 
   {

@@ -50,6 +50,7 @@ void MTCTaskNode::setupPlanningScene(const std::string &task_name)
   auto it = task_map_.find(task_name);
   if (it != task_map_.end()) {
     it->second.setup_scene();
+    return;
   }
 
   // Default to pickplace for now
