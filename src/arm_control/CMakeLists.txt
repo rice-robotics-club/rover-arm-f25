@@ -5,6 +5,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+set(moveit_msgs_DIR, "~/ws_moveit/src/moveit_msgs")
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
@@ -45,6 +47,10 @@ target_link_libraries(keyboard_reader PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
 add_executable(action_interpreter src/ActionInterpreter.cpp)
 target_link_libraries(action_interpreter PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
 
+add_executable(cartesian src/cartesian.cpp)
+target_link_libraries(cartesian PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
+
+add_subdirectory()
 
 #For MoveIt, has to be a library to turn it into an action server
 add_library(moveIt SHARED 
@@ -74,6 +80,7 @@ install(TARGETS
   keyboard_reader
   action_interpreter
   vision
+  cartesian
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch

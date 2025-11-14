@@ -38,17 +38,10 @@ def generate_launch_description():
     package_shared_path = get_package_share_directory(package)
     node = Node(
         package=package,
-        executable=LaunchConfiguration("exe"),
-        output="screen",
-        parameters=[
-            moveit_config.robot_description,
-            moveit_config.robot_description_semantic,
-            moveit_config.robot_description_kinematics,
-            moveit_config.joint_limits,
-            moveit_config.planning_pipelines,
-            os.path.join(package_shared_path, "config", "panda_config.yaml"),
-        ],
+        executable="keyboard_reader",
+        output="log",
+        parameters=[]
     )
 
-    arg = DeclareLaunchArgument(name="exe")
-    return LaunchDescription([arg, node])
+    # arg = DeclareLaunchArgument(name="exe")
+    return LaunchDescription([node])

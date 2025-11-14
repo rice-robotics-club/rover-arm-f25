@@ -93,6 +93,29 @@ def generate_launch_description():
             )
         ]
 
+    action_interpreter = Node(
+        package="arm_control",
+        executable="action_interpreter",
+        name="action_interpreter",
+        output="log",
+        arguments=[],
+    )
+
+    cartesian = Node(
+        package="arm_control",
+        executable="cartesian",
+        name="action_interpreter",
+        output="screen",
+        parameters=[
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
+            moveit_config.robot_description_kinematics,
+            moveit_config.joint_limits,
+            moveit_config.planning_pipelines,
+            os.path.join(package_shared_path, "config", "panda_config.yaml"),
+        ],
+    )
+
     return LaunchDescription(
         [
             rviz_node,

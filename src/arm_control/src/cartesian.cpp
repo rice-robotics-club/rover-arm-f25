@@ -84,7 +84,8 @@ Task moveToOffset(const rclcpp::Node::SharedPtr& node, const float* offsets) {
 	// start from a fixed robot state
 	t.loadRobotModel(node);
 	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
-	auto stage = std::make_unique<stages::MoveRelative>("x +0.2", cartesian_interpolation);
+	auto stage = std::make_unique<stages::MoveRelative>("mx %f, my %f, mz %f", offsets[0], 
+		offsets[1], offsets[2], cartesian_interpolation);
 	
 	stage->setGroup(group);
 	geometry_msgs::msg::Vector3Stamped direction;
@@ -111,7 +112,8 @@ Task rotateToOffset(const rclcpp::Node::SharedPtr& node, const float* offsets) {
 	// start from a fixed robot state
 	t.loadRobotModel(node);
 	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
-	auto stage = std::make_unique<stages::MoveRelative>("rz +45°", cartesian_interpolation);
+	auto stage = std::make_unique<stages::MoveRelative>("rx %f, ry %f, rz %f", offsets[0] * 180.0f/M_PI, 
+		offsets[1]*180.0f/M_PI, offsets[2]*180.0f/M_PI, cartesian_interpolation);
 	
 	stage->setGroup(group);
 	geometry_msgs::msg::TwistStamped twist;
