@@ -26,10 +26,11 @@ moveit::planning_interface::PlanningSceneInterface psi;
 
   // Panel dimensions: x=0.05 (depth), y=0.3 (width), z=0.4 (height)
   const double PANEL_DEPTH = 0.05;
-  const double PANEL_CENTER_X = 0.5;
-  const double PANEL_FRONT_FACE_X = PANEL_CENTER_X - (PANEL_DEPTH / 2.0); // 0.475
+  const double PANEL_CENTER_X = 0.6;
+  const double PANEL_FRONT_FACE_X = PANEL_CENTER_X - (PANEL_DEPTH / 2.0); // 0.575
   const double PANEL_HEIGHT = 0.4;
   const double PANEL_CENTER_Z = PANEL_HEIGHT / 2.0;                       // 0.2
+  const double Y_POS = -0.30;
 
   // Axle dimensions: Height=0.04 (along X-axis), Radius=0.01
   const double AXLE_HEIGHT = 0.04;
@@ -48,7 +49,7 @@ moveit::planning_interface::PlanningSceneInterface psi;
 
   geometry_msgs::msg::Pose panel_pose;
   panel_pose.position.x = PANEL_CENTER_X;
-  panel_pose.position.y = -0.25;
+  panel_pose.position.y = Y_POS;
   panel_pose.position.z = PANEL_CENTER_Z; // Standing on the floor (Z=0)
   panel_pose.orientation.w = 1.0;         // No rotation needed
   panel_object.pose = panel_pose;
@@ -66,9 +67,9 @@ moveit::planning_interface::PlanningSceneInterface psi;
 
   geometry_msgs::msg::Pose axle_pose;
   // Position the axle's center at X = Panel_Front_Face_X - Axle_Height/2
-  // Panel Front Face X is 0.475
-  axle_pose.position.x = PANEL_FRONT_FACE_X - (AXLE_HEIGHT / 2.0); // 0.475 - 0.02 = 0.455 meters
-  axle_pose.position.y = -0.25; 
+  // Panel Front Face X is 0.575
+  axle_pose.position.x = PANEL_FRONT_FACE_X - (AXLE_HEIGHT / 2.0); // 0.575 - 0.02 = 0.555 meters
+  axle_pose.position.y = Y_POS;
   axle_pose.position.z = PANEL_CENTER_Z; 
 
   // Rotate 90 degrees around Y-axis to make its length align with the X-axis (sticking out).
@@ -89,11 +90,11 @@ moveit::planning_interface::PlanningSceneInterface psi;
   knob_object.primitives[0].dimensions = { KNOB_THICKNESS, 0.03, 0.08 }; 
 
   geometry_msgs::msg::Pose knob_pose;
-  // Position it in front of the axle's end. Axle runs from X=0.435 to X=0.475.
+  // Position it in front of the axle's end. Axle runs from X=0.535 to X=0.575.
   // Knob Center X: Axle_Start_X - Knob_Thickness/2
   knob_pose.position.x = (PANEL_FRONT_FACE_X - AXLE_HEIGHT) - (KNOB_THICKNESS / 2.0); 
-  knob_pose.position.x = 0.435 - 0.01; // 0.425 meters
-  knob_pose.position.y = -0.25; 
+  knob_pose.position.x = 0.535 - 0.01; // 0.525 meters
+  knob_pose.position.y = Y_POS;  // Moved right 5cm from -0.25
   knob_pose.position.z = PANEL_CENTER_Z; 
 
   knob_pose.orientation.w = 1.0; 
@@ -157,7 +158,11 @@ mtc::Task MTCTaskNode::createTwistKnobTask()
   stage_move_to_knob->properties().configureInitFrom(mtc::Stage::PARENT);
   task.add(std::move(stage_move_to_knob));
 
+  // Disable warnings for this line, as it's a variable that's set but not used in this example
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
   mtc::Stage* attach_object_stage = nullptr;
+  #pragma GCC diagnostic pop
 
   {
     auto grasp = std::make_unique<mtc::SerialContainer>("grasp knob");
@@ -170,6 +175,7 @@ mtc::Task MTCTaskNode::createTwistKnobTask()
       stage->properties().set("link", hand_frame);
       stage->properties().configureInitFrom(mtc::Stage::PARENT, { "group" });
       stage->setMinMaxDistance(0.1, 0.15);
+      stage->setIKFrame(hand_frame);
 
       // Approach perpendicular to the knob's face (along negative X in world frame)
       // The knob's thin dimension (0.02m) is along X-axis, so we approach from +X toward -X
@@ -193,7 +199,7 @@ mtc::Task MTCTaskNode::createTwistKnobTask()
       stage->setAngleDelta(M_PI / 12);
       stage->setMonitoredStage(current_state_ptr);  // Hook into current state
 
-            Eigen::Isometry3d grasp_frame_transform;
+      Eigen::Isometry3d grasp_frame_transform;
       Eigen::Quaterniond q = Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()) *
                             Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitY()) *
                             Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ());
@@ -261,7 +267,7 @@ mtc::Task MTCTaskNode::createTwistKnobTask()
       stage->setDirection(twist_direction);
 
       stage->setIKFrame(hand_frame);
-      const double rotation_threshold = 0.05;
+      // const double rotation_threshold = 0.05;
       stage->setMinMaxDistance(M_PI_2, M_PI_2);
 
       grasp->insert(std::move(stage));
