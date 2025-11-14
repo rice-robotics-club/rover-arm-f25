@@ -47,10 +47,8 @@ target_link_libraries(keyboard_reader PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
 add_executable(action_interpreter src/ActionInterpreter.cpp)
 target_link_libraries(action_interpreter PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
 
-add_executable(cartesian src/cartesian.cpp)
-target_link_libraries(cartesian PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
-
-add_subdirectory()
+# add_executable(cartesian src/cartesian.cpp)
+# target_link_libraries(cartesian PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
 
 #For MoveIt, has to be a library to turn it into an action server
 add_library(moveIt SHARED 
@@ -80,7 +78,7 @@ install(TARGETS
   keyboard_reader
   action_interpreter
   vision
-  cartesian
+  # cartesian
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch

@@ -63,9 +63,9 @@ public:
           goal_item_name_= request -> goal_item_name;
           // this is where I would double check if the goal item was even in view before setting the response
           //  but I'll talk to vision about this later
-          dummyUpdateGoalPose();
+          bool isFound=dummyUpdateGoalPose();
 
-          response -> response=true;
+          response -> response=isFound;
         };
 
     service_ = this -> create_service<arm_control::srv::UpdateGoalItem>(
@@ -83,9 +83,12 @@ private:
   std::string goal_item_name_;
   rclcpp::Service<arm_control::srv::UpdateGoalItem>::SharedPtr service_;
   /**This method is only for testing, DELETE ONCE DONE! */
-  void dummyUpdateGoalPose(){
-    if (goal_item_name_=="BRICK"){
+  bool dummyUpdateGoalPose(){
+    if (goal_item_name_=="1"){
       goal_pose_.pose.position.x=1;
+      return true;
+    } else{
+      return false;
     }
   }
 };

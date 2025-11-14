@@ -63,7 +63,7 @@ public:
       [this]() {
         //has to be in a thread or the callback is never processed
         std::thread{[this](){
-          this->changeGoalItem("BRICK");  
+          this->changeGoalItem("1");  
         }}.detach();
         timer_->cancel();  
       });

@@ -32,193 +32,193 @@
    Desc:   Planning a simple sequence of Cartesian motions
 */
 
-#include <moveit/task_constructor/task.h>
+// #include <moveit/task_constructor/task.h>
 
-#include <moveit/task_constructor/stages/fixed_state.h>
-#include <moveit/task_constructor/solvers/cartesian_path.h>
-#include <moveit/task_constructor/solvers/joint_interpolation.h>
-#include <moveit/task_constructor/stages/move_to.h>
-#include <moveit/task_constructor/stages/move_relative.h>
-#include <moveit/task_constructor/stages/connect.h>
+// #include <moveit/task_constructor/stages/fixed_state.h>
+// #include <moveit/task_constructor/solvers/cartesian_path.h>
+// #include <moveit/task_constructor/solvers/joint_interpolation.h>
+// #include <moveit/task_constructor/stages/move_to.h>
+// #include <moveit/task_constructor/stages/move_relative.h>
+// #include <moveit/task_constructor/stages/connect.h>
 
-#include <rclcpp/rclcpp.hpp>
-#include <moveit/planning_scene/planning_scene.hpp>
+// #include <rclcpp/rclcpp.hpp>
+// #include <moveit/planning_scene/planning_scene.hpp>
 
-using namespace moveit::task_constructor;
+// using namespace moveit::task_constructor;
 
-Task goToStart(const rclcpp::Node::SharedPtr& node) {
-	Task t;
-	t.stages()->setName("Cartesian Path - Back To Start");
+// Task goToStart(const rclcpp::Node::SharedPtr& node) {
+// 	Task t;
+// 	t.stages()->setName("Cartesian Path - Back To Start");
 
-	const std::string group = "panda_arm";
-	const std::string eef = "hand";
+// 	const std::string group = "panda_arm";
+// 	const std::string eef = "hand";
 
-	// start from a fixed robot state
+// 	// start from a fixed robot state
 
-	// does this code forcibly reset the position of all joints to the 
-	// "ready" state? this code is NOT WORKING, change to use joint
-	// interpolation to move back to original state, but figure out 
-	// how this works next time
+// 	// does this code forcibly reset the position of all joints to the 
+// 	// "ready" state? this code is NOT WORKING, change to use joint
+// 	// interpolation to move back to original state, but figure out 
+// 	// how this works next time
 
-	t.loadRobotModel(node);
-	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
-	auto& state = scene->getCurrentStateNonConst();
-	state.setToDefaultValues(state.getJointModelGroup(group), "ready");
+// 	t.loadRobotModel(node);
+// 	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
+// 	auto& state = scene->getCurrentStateNonConst();
+// 	state.setToDefaultValues(state.getJointModelGroup(group), "ready");
 
-	auto fixed = std::make_unique<stages::FixedState>("initial state");
-	fixed->setState(scene);
-	t.add(std::move(fixed));
+// 	auto fixed = std::make_unique<stages::FixedState>("initial state");
+// 	fixed->setState(scene);
+// 	t.add(std::move(fixed));
 
-	return t;
-}
+// 	return t;
+// }
 
-Task moveToOffset(const rclcpp::Node::SharedPtr& node, const float* offsets) {
-	Task t;
-	t.stages()->setName("Cartesian Path - Back To Start");
+// Task moveToOffset(const rclcpp::Node::SharedPtr& node, const float* offsets) {
+// 	Task t;
+// 	t.stages()->setName("Cartesian Path - Back To Start");
 
-	auto cartesian_interpolation = std::make_shared<solvers::CartesianPath>();
+// 	auto cartesian_interpolation = std::make_shared<solvers::CartesianPath>();
 
-	const std::string group = "panda_arm";
-	const std::string eef = "hand";
+// 	const std::string group = "panda_arm";
+// 	const std::string eef = "hand";
 
-	// start from a fixed robot state
-	t.loadRobotModel(node);
-	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
-	auto stage = std::make_unique<stages::MoveRelative>("mx %f, my %f, mz %f", offsets[0], 
-		offsets[1], offsets[2], cartesian_interpolation);
+// 	// start from a fixed robot state
+// 	t.loadRobotModel(node);
+// 	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
+// 	auto stage = std::make_unique<stages::MoveRelative>("mx %f, my %f, mz %f", offsets[0], 
+// 		offsets[1], offsets[2], cartesian_interpolation);
 	
-	stage->setGroup(group);
-	geometry_msgs::msg::Vector3Stamped direction;
-	direction.header.frame_id = "world";
-	direction.vector.x = offsets[0];
-	direction.vector.y = offsets[1];
-	direction.vector.z = offsets[2];
+// 	stage->setGroup(group);
+// 	geometry_msgs::msg::Vector3Stamped direction;
+// 	direction.header.frame_id = "world";
+// 	direction.vector.x = offsets[0];
+// 	direction.vector.y = offsets[1];
+// 	direction.vector.z = offsets[2];
 
-	stage->setDirection(direction);
-	t.add(std::move(stage));
+// 	stage->setDirection(direction);
+// 	t.add(std::move(stage));
 
-	return t;
-}
+// 	return t;
+// }
 
-Task rotateToOffset(const rclcpp::Node::SharedPtr& node, const float* offsets) {
-	Task t;
-	t.stages()->setName("Cartesian Path - Back To Start");
+// Task rotateToOffset(const rclcpp::Node::SharedPtr& node, const float* offsets) {
+// 	Task t;
+// 	t.stages()->setName("Cartesian Path - Back To Start");
 
-	auto cartesian_interpolation = std::make_shared<solvers::CartesianPath>();
+// 	auto cartesian_interpolation = std::make_shared<solvers::CartesianPath>();
 
-	const std::string group = "panda_arm";
-	const std::string eef = "hand";
+// 	const std::string group = "panda_arm";
+// 	const std::string eef = "hand";
 
-	// start from a fixed robot state
-	t.loadRobotModel(node);
-	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
-	auto stage = std::make_unique<stages::MoveRelative>("rx %f, ry %f, rz %f", offsets[0] * 180.0f/M_PI, 
-		offsets[1]*180.0f/M_PI, offsets[2]*180.0f/M_PI, cartesian_interpolation);
+// 	// start from a fixed robot state
+// 	t.loadRobotModel(node);
+// 	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
+// 	auto stage = std::make_unique<stages::MoveRelative>("rx %f, ry %f, rz %f", offsets[0] * 180.0f/M_PI, 
+// 		offsets[1]*180.0f/M_PI, offsets[2]*180.0f/M_PI, cartesian_interpolation);
 	
-	stage->setGroup(group);
-	geometry_msgs::msg::TwistStamped twist;
-	twist.header.frame_id = "world";
-	twist.twist.angular.x = offsets[0];
-	twist.twist.angular.y = offsets[1];
-	twist.twist.angular.z = offsets[2];
-	stage->setDirection(twist);
-	t.add(std::move(stage));
+// 	stage->setGroup(group);
+// 	geometry_msgs::msg::TwistStamped twist;
+// 	twist.header.frame_id = "world";
+// 	twist.twist.angular.x = offsets[0];
+// 	twist.twist.angular.y = offsets[1];
+// 	twist.twist.angular.z = offsets[2];
+// 	stage->setDirection(twist);
+// 	t.add(std::move(stage));
 
-	return t;
-}
+// 	return t;
+// }
 
 
-Task createTask(const rclcpp::Node::SharedPtr& node) {
-	Task t;
-	t.stages()->setName("Cartesian Path");
+// Task createTask(const rclcpp::Node::SharedPtr& node) {
+// 	Task t;
+// 	t.stages()->setName("Cartesian Path");
 
-	const std::string group = "panda_arm";
-	const std::string eef = "hand";
+// 	const std::string group = "panda_arm";
+// 	const std::string eef = "hand";
 
-	// create Cartesian interpolation "planner" to be used in various stages
-	auto cartesian_interpolation = std::make_shared<solvers::CartesianPath>();
-	// create a joint-space interpolation "planner" to be used in various stages
-	auto joint_interpolation = std::make_shared<solvers::JointInterpolationPlanner>();
+// 	// create Cartesian interpolation "planner" to be used in various stages
+// 	auto cartesian_interpolation = std::make_shared<solvers::CartesianPath>();
+// 	// create a joint-space interpolation "planner" to be used in various stages
+// 	auto joint_interpolation = std::make_shared<solvers::JointInterpolationPlanner>();
 
-	// start from a fixed robot state
-	t.loadRobotModel(node);
-	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
-	{
-		auto& state = scene->getCurrentStateNonConst();
-		state.setToDefaultValues(state.getJointModelGroup(group), "ready");
+// 	// start from a fixed robot state
+// 	t.loadRobotModel(node);
+// 	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
+// 	{
+// 		auto& state = scene->getCurrentStateNonConst();
+// 		state.setToDefaultValues(state.getJointModelGroup(group), "ready");
 
-		auto fixed = std::make_unique<stages::FixedState>("initial state");
-		fixed->setState(scene);
-		t.add(std::move(fixed));
-	}
+// 		auto fixed = std::make_unique<stages::FixedState>("initial state");
+// 		fixed->setState(scene);
+// 		t.add(std::move(fixed));
+// 	}
 
-	{
-		auto stage = std::make_unique<stages::MoveRelative>("x +0.2", cartesian_interpolation);
-		stage->setGroup(group);
-		geometry_msgs::msg::Vector3Stamped direction;
-		direction.header.frame_id = "world";
-		direction.vector.x = 0.2;
-		stage->setDirection(direction);
-		t.add(std::move(stage));
-	}
+// 	{
+// 		auto stage = std::make_unique<stages::MoveRelative>("x +0.2", cartesian_interpolation);
+// 		stage->setGroup(group);
+// 		geometry_msgs::msg::Vector3Stamped direction;
+// 		direction.header.frame_id = "world";
+// 		direction.vector.x = 0.2;
+// 		stage->setDirection(direction);
+// 		t.add(std::move(stage));
+// 	}
 
-	{
-		auto stage = std::make_unique<stages::MoveRelative>("y -0.3", cartesian_interpolation);
-		stage->setGroup(group);
-		geometry_msgs::msg::Vector3Stamped direction;
-		direction.header.frame_id = "world";
-		direction.vector.y = -0.3;
-		stage->setDirection(direction);
-		t.add(std::move(stage));
-	}
+// 	{
+// 		auto stage = std::make_unique<stages::MoveRelative>("y -0.3", cartesian_interpolation);
+// 		stage->setGroup(group);
+// 		geometry_msgs::msg::Vector3Stamped direction;
+// 		direction.header.frame_id = "world";
+// 		direction.vector.y = -0.3;
+// 		stage->setDirection(direction);
+// 		t.add(std::move(stage));
+// 	}
 
-	{  // rotate about TCP
-		auto stage = std::make_unique<stages::MoveRelative>("rz +45°", cartesian_interpolation);
-		stage->setGroup(group);
-		geometry_msgs::msg::TwistStamped twist;
-		twist.header.frame_id = "world";
-		twist.twist.angular.z = M_PI / 4.;
-		stage->setDirection(twist);
-		t.add(std::move(stage));
-	}
+// 	{  // rotate about TCP
+// 		auto stage = std::make_unique<stages::MoveRelative>("rz +45°", cartesian_interpolation);
+// 		stage->setGroup(group);
+// 		geometry_msgs::msg::TwistStamped twist;
+// 		twist.header.frame_id = "world";
+// 		twist.twist.angular.z = M_PI / 4.;
+// 		stage->setDirection(twist);
+// 		t.add(std::move(stage));
+// 	}
 
-	{  // perform a Cartesian motion, defined as a relative offset in joint space
-		auto stage = std::make_unique<stages::MoveRelative>("joint offset", cartesian_interpolation);
-		stage->setGroup(group);
-		std::map<std::string, double> offsets = { { "panda_joint1", M_PI / 6. }, { "panda_joint3", -M_PI / 6 } };
-		stage->setDirection(offsets);
-		t.add(std::move(stage));
-	}
+// 	{  // perform a Cartesian motion, defined as a relative offset in joint space
+// 		auto stage = std::make_unique<stages::MoveRelative>("joint offset", cartesian_interpolation);
+// 		stage->setGroup(group);
+// 		std::map<std::string, double> offsets = { { "panda_joint1", M_PI / 6. }, { "panda_joint3", -M_PI / 6 } };
+// 		stage->setDirection(offsets);
+// 		t.add(std::move(stage));
+// 	}
 
-	{  // move from reached state back to the original state, using joint interpolation
-		stages::Connect::GroupPlannerVector planners = { { group, joint_interpolation } };
-		auto connect = std::make_unique<stages::Connect>("connect", planners);
-		t.add(std::move(connect));
-	}
+// 	{  // move from reached state back to the original state, using joint interpolation
+// 		stages::Connect::GroupPlannerVector planners = { { group, joint_interpolation } };
+// 		auto connect = std::make_unique<stages::Connect>("connect", planners);
+// 		t.add(std::move(connect));
+// 	}
 
-	{  // final state is original state again
-		auto fixed = std::make_unique<stages::FixedState>("final state");
-		fixed->setState(scene);
-		t.add(std::move(fixed));
-	}
+// 	{  // final state is original state again
+// 		auto fixed = std::make_unique<stages::FixedState>("final state");
+// 		fixed->setState(scene);
+// 		t.add(std::move(fixed));
+// 	}
 
-	return t;
-}
+// 	return t;
+// }
 
-int main(int argc, char** argv) {
-	rclcpp::init(argc, argv);
-	auto node = rclcpp::Node::make_shared("mtc_tutorial");
-	std::thread spinning_thread([node] { rclcpp::spin(node); });
+// int main(int argc, char** argv) {
+// 	rclcpp::init(argc, argv);
+// 	auto node = rclcpp::Node::make_shared("mtc_tutorial");
+// 	std::thread spinning_thread([node] { rclcpp::spin(node); });
 
-	auto task = createTask(node);
-	try {
-		if (task.plan())
-			task.introspection().publishSolution(*task.solutions().front());
-	} catch (const InitStageException& ex) {
-		std::cerr << "planning failed with exception\n" << ex << task;
-	}
+// 	auto task = createTask(node);
+// 	try {
+// 		if (task.plan())
+// 			task.introspection().publishSolution(*task.solutions().front());
+// 	} catch (const InitStageException& ex) {
+// 		std::cerr << "planning failed with exception\n" << ex << task;
+// 	}
 
-	// keep alive for interactive inspection in rviz
-	spinning_thread.join();
-	return 0;
-}
+// 	// keep alive for interactive inspection in rviz
+// 	spinning_thread.join();
+// 	return 0;
+// }
