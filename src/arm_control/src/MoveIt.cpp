@@ -58,12 +58,23 @@ public:
       this->create_client<arm_control::srv::UpdateGoalItem>("/update_goal_item");
 
     //FOR TESTING! PLS DELETE ONCE DONE!
+    //to test if it can publish
+    // timer_ = this->create_wall_timer(
+    //   std::chrono::seconds(2),
+    //   [this]() {
+    //     //has to be in a thread or the callback is never processed
+    //     std::thread{[this](){
+    //       this->changeGoalItem("1");  
+    //     }}.detach();
+    //     timer_->cancel();  
+    //   });
+    //to test if it can return false
     timer_ = this->create_wall_timer(
       std::chrono::seconds(2),
       [this]() {
         //has to be in a thread or the callback is never processed
         std::thread{[this](){
-          this->changeGoalItem("1");  
+          this->changeGoalItem("blah");  
         }}.detach();
         timer_->cancel();  
       });

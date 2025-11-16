@@ -60,10 +60,10 @@ public:
         const std::shared_ptr<arm_control::srv::UpdateGoalItem::Request> request,
         std::shared_ptr<arm_control::srv::UpdateGoalItem::Response> response){
           RCLCPP_INFO(this->get_logger(), "Received Goal Item: %s", request -> goal_item_name.c_str());
-          goal_item_name_= request -> goal_item_name;
+          std::string receivedName= request -> goal_item_name;
           // this is where I would double check if the goal item was even in view before setting the response
           //  but I'll talk to vision about this later
-          bool isFound=dummyUpdateGoalPose();
+          bool isFound=dummyUpdateGoalPose(receivedName);
 
           response -> response=isFound;
         };
@@ -83,9 +83,10 @@ private:
   std::string goal_item_name_;
   rclcpp::Service<arm_control::srv::UpdateGoalItem>::SharedPtr service_;
   /**This method is only for testing, DELETE ONCE DONE! */
-  bool dummyUpdateGoalPose(){
-    if (goal_item_name_=="1"){
+  bool dummyUpdateGoalPose(std::string received){
+    if (received=="1"){
       goal_pose_.pose.position.x=1;
+      goal_item_name_=received;
       return true;
     } else{
       return false;
