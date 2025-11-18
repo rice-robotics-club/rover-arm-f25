@@ -142,7 +142,7 @@ private:
     auto result = std::make_shared<ArmMovement::Result>();
     //check if arm has something attached to it
     if (!goal->attached_object.id.empty()){
-      CollisionObject attachedObject = goal->attached_object;
+      moveit_msgs::msg::CollisionObject attachedObject = goal->attached_object;
     }
     auto promise = std::make_shared<std::promise<bool>>();
     auto future = promise->get_future();
