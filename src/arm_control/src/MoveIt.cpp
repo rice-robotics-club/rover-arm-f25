@@ -140,13 +140,38 @@ private:
     const auto goal = goal_handle->get_goal();
     auto feedback = std::make_shared<ArmMovement::Feedback>();
     auto result = std::make_shared<ArmMovement::Result>();
-    //has to be in a thread or the callback is never processed
-    std::thread{[this, goal](){
-      this->changeGoalItem(goal->goal_item_name);  
-    }}.detach();
+    //check if arm has something attached to it
+    if (!goal->attached_object.id.empty()){
+      CollisionObject attachedObject = goal->attached_object;
+    }
+    auto promise = std::make_shared<std::promise<bool>>();
+    auto future = promise->get_future();
+    bool goalItemNotFound;
+    std::thread{[this, goal, promise](){
+        bool goalItemInSight = this->changeGoalItem(goal->goal_item_name);
+        promise->set_value(goalItemInSight);
+    }}.detach(); 
+
+    // Poll without blocking
+    while (rclcpp::ok()) {
+      if (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+        //the changeGoalItem method returns true when the goal item is in sight, false otherwise
+        goalItemNotFound = !future.get();
+        break;
+      }
+      rclcpp::spin_some(this->get_node_base_interface());
+      loop_rate.sleep();
+    }
+
     //check for termiante
     if (shouldTerminate()){
       return;
+    }
+    if (goalItemNotFound){
+      result->success=false;
+      result->error_code.val=MoveItErrorCodes::UNABLE_TO_AQUIRE_SENSOR_DATA;
+      result->error_code.message = "Goal Item not in sight";
+      result->error_code.source = "MoveIt node";
     }
     ExecutionStatus status = ExecutionStatus(ExecutionStatus::RUNNING);
 
