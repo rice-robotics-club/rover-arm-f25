@@ -31,3 +31,14 @@ This runs the C++ node containing the MTC task sequence. Or, choose the twist_kn
 source install/setup.bash
 ros2 launch mtc_tutorial pick_place_demo.launch.py
 ```
+
+## Python Pose Publisher
+
+Simple Python node that publishes example target poses to `/target_pose` topic for MoveIt2 integration.
+
+```bash
+source install/setup.bash
+ros2 launch mtc_tutorial pose_publisher.launch.py
+```
+
+See `scripts/README.md` for details.
