@@ -59,15 +59,30 @@ public:
 
     //FOR TESTING! PLS DELETE ONCE DONE!
     //to test if it can publish
-    // timer_ = this->create_wall_timer(
-    //   std::chrono::seconds(2),
-    //   [this]() {
-    //     //has to be in a thread or the callback is never processed
-    //     std::thread{[this](){
-    //       this->changeGoalItem("1");  
-    //     }}.detach();
-    //     timer_->cancel();  
-    //   });
+    timer_ = this->create_wall_timer(
+      std::chrono::seconds(2),
+      [this]() {
+        //has to be in a thread or the callback is never processed
+
+        rclcpp::Rate loop_rate(1);
+        auto promise = std::make_shared<std::promise<bool>>();
+        auto future = promise->get_future();
+        bool goalItemFound=false;
+
+        std::thread{[this, promise](){
+          bool goalItemInSight = this->changeGoalItem("1");  
+          promise->set_value(goalItemInSight);
+        }}.detach();
+
+        //it doesn't block, fuck
+        RCLCPP_INFO(this -> get_logger(), "Goal Item Updated");
+        if (goalItemFound){
+          RCLCPP_INFO(this -> get_logger(), "Service Response Received");
+        }
+        
+        timer_->cancel();  
+      });
+    
 
     //to test if it can return false
     // timer_ = this->create_wall_timer(

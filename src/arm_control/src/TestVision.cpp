@@ -48,7 +48,8 @@ public:
       [this]() -> void {
         if (goal_item_name_ != "NA") {
           this->publisher_->publish(goal_pose_);
-          RCLCPP_INFO(this->get_logger(), "Publishing goal for: %s", goal_item_name_.c_str());
+          // RCLCPP_INFO(this->get_logger(), "Publishing goal for: %s", goal_item_name_.c_str());
+          RCLCPP_INFO(this->get_logger(), "X coord should be: %f", goal_pose_.pose.position.x);
         } else {
           RCLCPP_INFO(this->get_logger(), "No goal item set");
         }

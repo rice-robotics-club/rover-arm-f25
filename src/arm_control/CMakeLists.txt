@@ -72,28 +72,6 @@ target_link_libraries(moveIt "${cpp_typesupport_target}")
 rclcpp_components_register_node(moveIt 
   PLUGIN "arm_control_cpp::MoveIt" 
   EXECUTABLE moveItNode)
-#For Teleop node
-add_library(Teleop SHARED 
-  src/Teleop.cpp
-)
-target_include_directories(Teleop PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_definitions(Teleop
-  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
-ament_target_dependencies(Teleop
-  rclcpp 
-  rclcpp_action
-  rclcpp_components
-  moveit_msgs
-  )
-rosidl_target_interfaces(Teleop
-  ${PROJECT_NAME} "rosidl_typesupport_cpp")
-#make it executable
-rclcpp_components_register_node(Teleop 
-  PLUGIN "arm_control_cpp::Teleop" 
-    EXECUTABLE teleopNode)
-
 
 #install vision
 install(TARGETS
@@ -105,9 +83,8 @@ install(TARGETS
 
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME})
-#install moveIt and Teleop lib (which is also an executable)
+#install moveIt lib (which is also an executable)
 install(TARGETS
-  Teleop
   moveIt
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
