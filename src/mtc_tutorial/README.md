@@ -26,7 +26,7 @@ ros2 launch moveit2_tutorials mtc_demo.launch.py
 ```
 
 ### Terminal 2: Run the Pick + Place Application
-This runs the C++ node containing the MTC task sequence. 
+This runs the C++ node containing the MTC task sequence. Or, choose the twist_knob launch file for that task sequence. 
 ```bash
 source install/setup.bash
 ros2 launch mtc_tutorial pick_place_demo.launch.py
