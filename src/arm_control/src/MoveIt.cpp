@@ -74,10 +74,13 @@ public:
           promise->set_value(goalItemInSight);
         }}.detach();
 
-        //it doesn't block, fuck
-        RCLCPP_INFO(this -> get_logger(), "Goal Item Updated");
-        if (goalItemFound){
-          RCLCPP_INFO(this -> get_logger(), "Service Response Received");
+        
+        // Wait for the service call to complete (with timeout)
+        if (future.wait_for(std::chrono::seconds(2)) == std::future_status::ready) {
+          goalItemFound = future.get();
+          if (goalItemFound){
+            RCLCPP_INFO(this->get_logger(), "Service Response Received");
+          }
         }
         
         timer_->cancel();  
