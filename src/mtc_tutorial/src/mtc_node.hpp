@@ -1,3 +1,15 @@
+#include <string>
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <unordered_map>
+#include <functional>
+#include <moveit/task_constructor/task.h>
+#include <moveit/task_constructor/solvers.h>
+#include <moveit/task_constructor/stages.h>
+#include <moveit/planning_scene/planning_scene.hpp>
+#include <moveit/planning_scene_interface/planning_scene_interface.hpp>
+#include <moveit/move_group_interface/move_group_interface.hpp>
+
 namespace mtc = moveit::task_constructor;
 
 class MTCTaskNode
@@ -31,4 +43,8 @@ private:
 
   mtc::Task task_;
   rclcpp::Node::SharedPtr node_;
+
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr object_pose_sub_;
+  geometry_msgs::msg::Pose detected_object_pose_;
+  bool object_detected_ = false;
 };
