@@ -19,18 +19,36 @@
 // mtc node class
 #include "../mtc_node.hpp"
 
+static const rclcpp::Logger LOGGER = rclcpp::get_logger("mtc_tutorial");
+
 void MTCTaskNode::setupTwistKnobScene()
 {
-moveit::planning_interface::PlanningSceneInterface psi;
+  moveit::planning_interface::PlanningSceneInterface psi;
   std::vector<moveit_msgs::msg::CollisionObject> objects;
+
+  // Use coordinates from action goal if available, otherwise use defaults
+  double knob_center_x = 0.6;
+  double knob_center_y = -0.30;
+  double knob_center_z = 0.2;
+  
+  if (has_coordinates_) {
+    // Use target_pose for knob location
+    knob_center_x = target_pose_.position.x;
+    knob_center_y = target_pose_.position.y;
+    knob_center_z = target_pose_.position.z;
+    RCLCPP_INFO(LOGGER, "Using action goal knob pose: x=%.2f, y=%.2f, z=%.2f",
+                knob_center_x, knob_center_y, knob_center_z);
+  } else {
+    RCLCPP_WARN(LOGGER, "No action coordinates provided, using default knob pose");
+  }
 
   // Panel dimensions: x=0.05 (depth), y=0.3 (width), z=0.4 (height)
   const double PANEL_DEPTH = 0.05;
-  const double PANEL_CENTER_X = 0.6;
-  const double PANEL_FRONT_FACE_X = PANEL_CENTER_X - (PANEL_DEPTH / 2.0); // 0.575
+  const double PANEL_CENTER_X = knob_center_x;
+  const double PANEL_FRONT_FACE_X = PANEL_CENTER_X - (PANEL_DEPTH / 2.0);
   const double PANEL_HEIGHT = 0.4;
-  const double PANEL_CENTER_Z = PANEL_HEIGHT / 2.0;                       // 0.2
-  const double Y_POS = -0.30;
+  const double PANEL_CENTER_Z = PANEL_HEIGHT / 2.0;
+  const double Y_POS = knob_center_y;
 
   // Axle dimensions: Height=0.04 (along X-axis), Radius=0.01
   const double AXLE_HEIGHT = 0.04;

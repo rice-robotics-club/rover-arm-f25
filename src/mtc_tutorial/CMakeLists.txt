@@ -9,6 +9,16 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(moveit_task_constructor_core REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(action_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+# Generate action interfaces
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "action/ExecuteTask.action"
+  DEPENDENCIES geometry_msgs action_msgs
+)
 
 add_executable(mtc_node src/mtc_node.cpp src/tasks/pick_place.cpp src/tasks/twist_knob.cpp)
 target_include_directories(mtc_node PUBLIC
@@ -19,7 +29,14 @@ ament_target_dependencies(
   mtc_node
   "moveit_task_constructor_core"
   "rclcpp"
+  "rclcpp_action"
+  "action_msgs"
+  "geometry_msgs"
 )
+
+# Link against generated action interfaces
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(mtc_node "${cpp_typesupport_target}")
 
 install(TARGETS mtc_node
   DESTINATION lib/${PROJECT_NAME})
@@ -31,6 +48,8 @@ install(DIRECTORY launch
 install(PROGRAMS
   scripts/pose_publisher.py
   scripts/test_pose_subscriber.py
+  scripts/task_client.py
+  scripts/interactive_client.py
   DESTINATION lib/${PROJECT_NAME}
   )
 

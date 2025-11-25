@@ -1,6 +1,35 @@
-# Pose Publisher for ROS2 + MoveIt2
+# MTC Tutorial Python Scripts
 
-Simple Python node that publishes target poses for MoveIt2 motion planning.
+Python tools for MoveIt Task Constructor manipulation tasks.
+
+## Action Clients
+
+### interactive_client.py
+Interactive menu-driven client for sending manipulation tasks.
+
+```bash
+ros2 run mtc_tutorial interactive_client.py
+```
+
+Features:
+- Pick and place with default or custom coordinates
+- Twist knob with default or custom coordinates
+- Real-time feedback display
+- Easy-to-use menu interface
+
+### task_client.py
+Simple programmatic example of sending action goals.
+
+```bash
+ros2 run mtc_tutorial task_client.py
+```
+
+Modify this script to send custom goals programmatically.
+
+## Testing Tools
+
+### pose_publisher.py
+Simple Python node that publishes target poses for testing.
 
 ## Quick Start
 

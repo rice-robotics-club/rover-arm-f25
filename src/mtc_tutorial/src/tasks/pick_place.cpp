@@ -30,15 +30,19 @@ void MTCTaskNode::setupPickPlaceScene()
   object.primitives[0].type = shape_msgs::msg::SolidPrimitive::CYLINDER;
   object.primitives[0].dimensions = { 0.1, 0.02 };
 
-  if (object_detected_) {
-    object.pose = detected_object_pose_;
-    RCLCPP_INFO(LOGGER, "Using detected object pose");
+  // Use coordinates from action goal if available
+  if (has_coordinates_) {
+    object.pose = target_pose_;
+    RCLCPP_INFO(LOGGER, "Using action goal target pose: x=%.2f, y=%.2f, z=%.2f",
+                target_pose_.position.x, target_pose_.position.y, target_pose_.position.z);
   } else {
+    // Default pose
     geometry_msgs::msg::Pose pose;
     pose.position.x = 0.5;
     pose.position.y = -0.25;
     pose.orientation.w = 1.0;
     object.pose = pose;
+    RCLCPP_WARN(LOGGER, "No action coordinates provided, using default pose");
   }
 
   moveit::planning_interface::PlanningSceneInterface psi;

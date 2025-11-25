@@ -1,0 +1,15 @@
+# Goal - what task to execute
+string task_type                    # "pick_place" or "twist_knob"
+geometry_msgs/Pose target_pose      # Object location or knob location
+geometry_msgs/Pose place_pose       # Where to place (only used for pick_place)
+---
+# Result - outcome of the task
+bool success                        # Whether task completed successfully
+string message                      # Human-readable result description
+float32 execution_time              # How long task took in seconds
+---
+# Feedback - progress updates during execution
+string current_stage                # Current stage name
+float32 progress_percentage         # Progress from 0 to 100
+float32 estimated_time_remaining    # Estimated seconds remaining
+
