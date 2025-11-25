@@ -63,29 +63,10 @@ public:
       std::chrono::seconds(2),
       [this]() {
         //has to be in a thread or the callback is never processed
-
-        receivedByVision_=false;
-
         std::thread{[this](){
           bool response=this->changeGoalItem("1");
-          this -> receivedByVision_= response;
-          // RCLCPP_INFO(this->get_logger(), "Vision Responded with: %s", response ? "true" : "false");
-          RCLCPP_INFO(this->get_logger(), "moveIt thinkts that it responded with: %s", this->receivedByVision_ ? "true": "false");
+          RCLCPP_INFO(this->get_logger(), "Vision Responded with: %s", response ? "true" : "false");
         }}.detach();
-        
-        rclcpp::Rate loop_rate(1);
-        int counter=0;
-        // Wait for the service call to complete (with timeout)
-        while (!receivedByVision_ && counter<5){
-          RCLCPP_INFO(this->get_logger(), "Waiting for service response");
-          loop_rate.sleep();
-          counter+=1;
-        }
-        if (receivedByVision_){
-          RCLCPP_INFO(this->get_logger(), "Service Response Received");
-        } else{
-          RCLCPP_ERROR(this->get_logger(), "Service Error");
-        }
         
         timer_->cancel();  
       });
@@ -145,7 +126,8 @@ private:
 
   geometry_msgs::msg::PoseStamped goal_pose_;
 
-  bool receivedByVision_;
+  //because of multithreading bs, std::atomic is needed
+  // std::atomic<bool> receivedByVision_;
 
   //for debug, pls delete
   rclcpp::TimerBase::SharedPtr timer_;
@@ -173,6 +155,7 @@ private:
     std::thread{[this, goal, promise](){
         bool goalItemInSight = this->changeGoalItem(goal->goal_item_name);
         promise->set_value(goalItemInSight);
+        //The rest of the code for Execute has to go into here otherwise we get some stupid memory memes.
     }}.detach(); 
 
     // Poll without blocking
