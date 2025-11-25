@@ -64,28 +64,31 @@ public:
       [this]() {
         //has to be in a thread or the callback is never processed
 
-        rclcpp::Rate loop_rate(1);
-        auto promise = std::make_shared<std::promise<bool>>();
-        auto future = promise->get_future();
-        bool goalItemFound=false;
+        receivedByVision_=false;
 
-        std::thread{[this, promise](){
-          bool goalItemInSight = this->changeGoalItem("1");  
-          promise->set_value(goalItemInSight);
+        std::thread{[this](){
+          bool response=this->changeGoalItem("1");
+          this -> receivedByVision_= response;
+          // RCLCPP_INFO(this->get_logger(), "Vision Responded with: %s", response ? "true" : "false");
+          RCLCPP_INFO(this->get_logger(), "moveIt thinkts that it responded with: %s", this->receivedByVision_ ? "true": "false");
         }}.detach();
-
         
+        rclcpp::Rate loop_rate(1);
+        int counter=0;
         // Wait for the service call to complete (with timeout)
-        if (future.wait_for(std::chrono::seconds(2)) == std::future_status::ready) {
-          goalItemFound = future.get();
-          if (goalItemFound){
-            RCLCPP_INFO(this->get_logger(), "Service Response Received");
-          }
+        while (!receivedByVision_ && counter<5){
+          RCLCPP_INFO(this->get_logger(), "Waiting for service response");
+          loop_rate.sleep();
+          counter+=1;
+        }
+        if (receivedByVision_){
+          RCLCPP_INFO(this->get_logger(), "Service Response Received");
+        } else{
+          RCLCPP_ERROR(this->get_logger(), "Service Error");
         }
         
         timer_->cancel();  
       });
-    
 
     //to test if it can return false
     // timer_ = this->create_wall_timer(
@@ -141,6 +144,8 @@ private:
   rclcpp_action::Server<ArmMovement>::SharedPtr action_server_;
 
   geometry_msgs::msg::PoseStamped goal_pose_;
+
+  bool receivedByVision_;
 
   //for debug, pls delete
   rclcpp::TimerBase::SharedPtr timer_;
@@ -232,6 +237,7 @@ private:
   /** 
    * This is a method to change the call the UpdateGoalItem service
    * @param goal_item_name A string to represent the name of the goal item the Vision node should find
+   * @return A boolean to represent if the Vision node received the item
   */
   bool changeGoalItem(std::string goal_item_name){
     auto request = std::make_shared<arm_control::srv::UpdateGoalItem::Request>();
@@ -252,7 +258,7 @@ private:
       return false;
     }
     auto result =future.get();
-  
+    // RCLCPP_INFO(this->get_logger(), "UpdateGoalItem responded with %s", result->response ? "true": "false");
     if (result->response) {
       RCLCPP_INFO(this->get_logger(), "Updated Goal Item");
       return true;

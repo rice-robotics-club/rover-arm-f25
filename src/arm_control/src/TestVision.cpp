@@ -60,11 +60,12 @@ public:
     auto update_goal_item = [this](
         const std::shared_ptr<arm_control::srv::UpdateGoalItem::Request> request,
         std::shared_ptr<arm_control::srv::UpdateGoalItem::Response> response){
-          RCLCPP_INFO(this->get_logger(), "Received Goal Item: %s", request -> goal_item_name.c_str());
+          // RCLCPP_INFO(this->get_logger(), "Received Goal Item: %s", request -> goal_item_name.c_str());
           std::string receivedName= request -> goal_item_name;
           // this is where I would double check if the goal item was even in view before setting the response
           //  but I'll talk to vision about this later
           bool isFound=dummyUpdateGoalPose(receivedName);
+          RCLCPP_INFO(this->get_logger(), "Responded with: %s", isFound? "true": "false");
 
           response -> response=isFound;
         };
