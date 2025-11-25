@@ -7,7 +7,7 @@ Simple Python node that publishes target poses for MoveIt2 motion planning.
 ```bash
 # Build
 cd ~/rover-arm-f25
-colcon build --packages-select mtc_tutorial
+colcon build --mixin debug --packages-select mtc_tutorial
 source install/setup.bash
 
 # Run publisher
