@@ -31,9 +31,8 @@
 #include "arm_control/srv/update_goal_item.hpp"
 #include "arm_control/action/arm_movement.hpp"
 
-#include "arm_control/visibility_control.h"
 
-namespace arm_control_cpp{
+
 class MoveIt : public rclcpp::Node
 {
 public:
@@ -262,5 +261,13 @@ private:
     return !rclcpp::ok();
   }
 };
+int main(int argc, char *argv[])
+{
+    rclcpp::init(argc, argv);
+    rclcpp::executors::MultiThreadedExecutor executor;
+    auto node = std::make_shared<MoveIt>();
+    executor.add_node(node);
+    executor.spin();
+    rclcpp::shutdown();
+    return 0;
 }
-RCLCPP_COMPONENTS_REGISTER_NODE(arm_control_cpp::MoveIt);

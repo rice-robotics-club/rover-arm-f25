@@ -19,7 +19,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
 find_package(moveit_core REQUIRED)
-find_package(moveit_ros_planning_interface)
+find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_ros_control_interface REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
@@ -50,14 +50,9 @@ target_link_libraries(action_interpreter PUBLIC rclcpp::rclcpp ${std_msgs_TARGET
 # add_executable(cartesian src/cartesian.cpp)
 # target_link_libraries(cartesian PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
 
-#For MoveIt, has to be a library to turn it into an action server
-add_library(moveIt SHARED 
-src/MoveIt.cpp)
-#for the stuff in the include folder
-target_include_directories(moveIt PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(moveIt 
+#For MoveIt
+add_executable(moveItNode src/MoveIt.cpp)
+ament_target_dependencies(moveItNode 
   rclcpp 
   rclcpp_action
   rclcpp_components
@@ -66,29 +61,50 @@ ament_target_dependencies(moveIt
   moveit_core
   moveit_ros_planning_interface
   moveit_ros_control_interface
-  )
-target_link_libraries(moveIt "${cpp_typesupport_target}")
-#make it executable
-rclcpp_components_register_node(moveIt 
-  PLUGIN "arm_control_cpp::MoveIt" 
-  EXECUTABLE moveItNode)
+)
+target_link_libraries(moveItNode "${cpp_typesupport_target}")
+# #For MoveIt, has to be a library to turn it into an action server
+# add_library(moveIt SHARED 
+# src/MoveIt.cpp)
+# #for the stuff in the include folder
+# target_include_directories(moveIt PRIVATE
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
+# ament_target_dependencies(moveIt 
+#   rclcpp 
+#   rclcpp_action
+#   rclcpp_components
+#   geometry_msgs 
+#   moveit_msgs
+#   moveit_core
+#   moveit_ros_planning_interface
+#   moveit_ros_control_interface
+#   )
+# target_link_libraries(moveIt "${cpp_typesupport_target}")
+# #make it executable
+# rclcpp_components_register_node(moveIt 
+#   PLUGIN "arm_control_cpp::MoveIt" 
+#   EXECUTABLE moveItNode)
 
-#install vision
+#installs
 install(TARGETS
   keyboard_reader
   action_interpreter
   vision
+  moveItNode
   # cartesian
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME})
+
+
 #install moveIt lib (which is also an executable)
-install(TARGETS
-  moveIt
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
+# install(TARGETS
+#   moveIt
+#   ARCHIVE DESTINATION lib
+#   LIBRARY DESTINATION lib
+#   RUNTIME DESTINATION bin)
 
 
 
