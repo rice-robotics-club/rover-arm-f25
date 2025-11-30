@@ -51,37 +51,13 @@ public:
         goal_pose_=*msg;
         RCLCPP_INFO(this->get_logger(), "I heard x coord '%f'", goal_pose_.pose.position.x);
       };
-    subscription_ =
+    goal_pose_subscription =
       this->create_subscription<geometry_msgs::msg::PoseStamped>("/goal_pose", 10, topic_callback);
 
-    client_ =
+    update_goal_item_client_ =
       this->create_client<arm_control::srv::UpdateGoalItem>("/update_goal_item");
 
-    //FOR TESTING! PLS DELETE ONCE DONE!
-    //to test if it can publish
-    timer_ = this->create_wall_timer(
-      std::chrono::seconds(2),
-      [this]() {
-        //has to be in a thread or the callback is never processed
-        std::thread{[this](){
-          bool response=this->changeGoalItem("1");
-          RCLCPP_INFO(this->get_logger(), "Vision Responded with: %s", response ? "true" : "false");
-        }}.detach();
-        
-        timer_->cancel();  
-      });
-
-    //to test if it can return false
-    // timer_ = this->create_wall_timer(
-    //   std::chrono::seconds(2),
-    //   [this]() {
-    //     //has to be in a thread or the callback is never processed
-    //     std::thread{[this](){
-    //       this->changeGoalItem("blah");  
-    //     }}.detach();
-    //     timer_->cancel();  
-    //   });
-
+    //Action Server Lambda Functions
     using namespace std::placeholders;
     auto handle_goal = [this](
       const rclcpp_action::GoalUUID & uuid,
@@ -109,18 +85,44 @@ public:
       auto execute_in_thread = [this, goal_handle](){return this->execute(goal_handle);};
       std::thread{execute_in_thread}.detach();
     };
+    //Action Server Declaration
     this->action_server_ = rclcpp_action::create_server<ArmMovement>(
       this,
       "arm_movement",
       handle_goal,
       handle_cancel,
       handle_accepted);
+
+    //FOR TESTING! PLS DELETE ONCE DONE!
+    //to test if it can publish
+    timer_ = this->create_wall_timer(
+      std::chrono::seconds(2),
+      [this]() {
+        //has to be in a thread or the callback is never processed
+        std::thread{[this](){
+          bool response=this->changeGoalItem("1");
+          RCLCPP_INFO(this->get_logger(), "Vision Responded with: %s", response ? "true" : "false");
+        }}.detach();
+        
+        timer_->cancel();  
+      });
+
+    //to test if it can return false
+    // timer_ = this->create_wall_timer(
+    //   std::chrono::seconds(2),
+    //   [this]() {
+    //     //has to be in a thread or the callback is never processed
+    //     std::thread{[this](){
+    //       this->changeGoalItem("blah");  
+    //     }}.detach();
+    //     timer_->cancel();  
+    //   });
   }
 
 private:
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_subscription;
 
-  rclcpp::Client<arm_control::srv::UpdateGoalItem>::SharedPtr client_;
+  rclcpp::Client<arm_control::srv::UpdateGoalItem>::SharedPtr update_goal_item_client_;
 
   rclcpp_action::Server<ArmMovement>::SharedPtr action_server_;
 
@@ -225,7 +227,7 @@ private:
   bool changeGoalItem(std::string goal_item_name){
     auto request = std::make_shared<arm_control::srv::UpdateGoalItem::Request>();
     request -> goal_item_name=goal_item_name;
-    while (!client_->wait_for_service(std::chrono::seconds(3))) {
+    while (!update_goal_item_client_->wait_for_service(std::chrono::seconds(3))) {
       if (shouldTerminate()) {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
         return false;
@@ -233,7 +235,7 @@ private:
       RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Waiting for UpdateGoalItem");
     }
 
-    auto future = client_->async_send_request(request);
+    auto future = update_goal_item_client_->async_send_request(request);
 
     // Wait up to 5 seconds
     if (future.wait_for(std::chrono::seconds(5)) != std::future_status::ready) {
