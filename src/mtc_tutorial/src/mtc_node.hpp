@@ -48,6 +48,9 @@ private:
   mtc::Task createTwistKnobTask();
   void setupTwistKnobScene();
 
+  mtc::Task createMoveHomeTask();
+  void setupMoveHomeScene();
+
   struct TaskEntry {
     std::function<mtc::Task()> create_task;
     std::function<void()> setup_scene;
@@ -69,4 +72,7 @@ private:
   geometry_msgs::msg::Pose place_pose_;
   bool has_coordinates_ = false;
   std::string current_task_type_;
+  
+  // Execution control
+  bool execute_enabled_ = true;  // Set to false to skip execution (plan-only mode)
 };

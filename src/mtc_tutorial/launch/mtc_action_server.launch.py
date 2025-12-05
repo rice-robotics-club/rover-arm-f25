@@ -1,4 +1,6 @@
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from moveit_configs_utils import MoveItConfigsBuilder
 
@@ -12,7 +14,25 @@ def generate_launch_description():
     
     IMPORTANT: Start the MoveIt environment first:
       ros2 launch moveit2_tutorials mtc_demo.launch.py
+    
+    That launch file provides:
+      - move_group with ExecuteTaskSolutionCapability (required for execution)
+      - robot_state_publisher
+      - static TF (world -> panda_link0)
+      - ros2_control with fake hardware
+      - RViz for visualization
+    
+    Arguments:
+      execute:=true/false  - Enable/disable trajectory execution (default: false)
+                            Set to false for plan-only mode (avoids move_group crash)
     """
+    
+    # Declare launch argument for execution control
+    execute_arg = DeclareLaunchArgument(
+        'execute',
+        default_value='false',  # Default to false due to move_group crash issue
+        description='Enable trajectory execution (set to false for plan-only mode)'
+    )
     
     # Load complete MoveIt configuration for Panda robot
     moveit_config = (
@@ -33,6 +53,7 @@ def generate_launch_description():
         parameters=[
             {
                 'use_sim_time': False,
+                'execute': LaunchConfiguration('execute'),
             },
             moveit_config.robot_description,
             moveit_config.robot_description_semantic,
@@ -43,6 +64,7 @@ def generate_launch_description():
     )
     
     return LaunchDescription([
+        execute_arg,
         mtc_node
     ])
 

@@ -20,7 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES geometry_msgs action_msgs
 )
 
-add_executable(mtc_node src/mtc_node.cpp src/tasks/pick_place.cpp src/tasks/twist_knob.cpp)
+add_executable(mtc_node src/mtc_node.cpp src/tasks/pick_place.cpp src/tasks/twist_knob.cpp src/tasks/move_home.cpp)
 target_include_directories(mtc_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
@@ -37,6 +37,10 @@ ament_target_dependencies(
 # Link against generated action interfaces
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
 target_link_libraries(mtc_node "${cpp_typesupport_target}")
+
+# Add include directories for generated action interfaces
+target_include_directories(mtc_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>)
 
 install(TARGETS mtc_node
   DESTINATION lib/${PROJECT_NAME})

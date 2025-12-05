@@ -25,6 +25,19 @@ static const rclcpp::Logger LOGGER = rclcpp::get_logger("mtc_tutorial");
 MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   : node_{ std::make_shared<rclcpp::Node>("mtc_node", options) }
 {
+  // Get execution parameter (declared via launch file or use default)
+  // Use declare_parameter with default only if not already declared
+  if (!node_->has_parameter("execute")) {
+    node_->declare_parameter("execute", false);
+  }
+  execute_enabled_ = node_->get_parameter("execute").as_bool();
+  
+  if (!execute_enabled_) {
+    RCLCPP_WARN(LOGGER, "Execution is DISABLED - plan-only mode (set 'execute:=true' to enable)");
+  } else {
+    RCLCPP_INFO(LOGGER, "Execution is ENABLED");
+  }
+  
   // Initialize Tasks
   task_map_.emplace("pick_place", TaskEntry{
     std::bind(&MTCTaskNode::createPickPlaceTask, this),
@@ -34,6 +47,11 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   task_map_.emplace("twist_knob", TaskEntry{
     std::bind(&MTCTaskNode::createTwistKnobTask, this),
     std::bind(&MTCTaskNode::setupTwistKnobScene, this)
+  });
+
+  task_map_.emplace("move_home", TaskEntry{
+    std::bind(&MTCTaskNode::createMoveHomeTask, this),
+    std::bind(&MTCTaskNode::setupMoveHomeScene, this)
   });
 
   // Create action server
@@ -76,7 +94,7 @@ rclcpp_action::GoalResponse MTCTaskNode::handle_goal(
   }
   
   // Validate task type
-  if (goal->task_type != "pick_place" && goal->task_type != "twist_knob") {
+  if (goal->task_type != "pick_place" && goal->task_type != "twist_knob" && goal->task_type != "move_home") {
     RCLCPP_ERROR(LOGGER, "Invalid task type: %s", goal->task_type.c_str());
     return rclcpp_action::GoalResponse::REJECT;
   }
@@ -260,24 +278,33 @@ void MTCTaskNode::execute_task(const std::shared_ptr<GoalHandleExecuteTask> goal
   feedback->estimated_time_remaining = 10.0;
   goal_handle->publish_feedback(feedback);
   
-  // Publish solution for visualization
+  // Publish solution for visualization (always do this)
+  RCLCPP_INFO(LOGGER, "Publishing solution for visualization...");
   task_.introspection().publishSolution(*task_.solutions().front());
   
-  // Execute task
-  auto exec_result = task_.execute(*task_.solutions().front());
-  
-  if (exec_result.val != moveit_msgs::msg::MoveItErrorCodes::SUCCESS) {
-    RCLCPP_ERROR(LOGGER, "Task execution failed with error code: %d", exec_result.val);
-    result->success = false;
-    result->message = "Execution failed";
-    result->execution_time = 0.0;
-    {
-      std::lock_guard<std::mutex> lock(state_mutex_);
-      task_in_progress_ = false;
-      has_coordinates_ = false;
+  // Execute task (if enabled)
+  if (execute_enabled_) {
+    RCLCPP_INFO(LOGGER, "Calling task_.execute() - connecting to 'execute_task_solution' action server...");
+    RCLCPP_INFO(LOGGER, "NOTE: Make sure 'ros2 launch moveit2_tutorials mtc_demo.launch.py' is running!");
+    auto exec_result = task_.execute(*task_.solutions().front());
+    RCLCPP_INFO(LOGGER, "task_.execute() returned with code: %d", exec_result.val);
+    
+    if (exec_result.val != moveit_msgs::msg::MoveItErrorCodes::SUCCESS) {
+      RCLCPP_ERROR(LOGGER, "Task execution failed with error code: %d", exec_result.val);
+      result->success = false;
+      result->message = "Execution failed";
+      result->execution_time = 0.0;
+      {
+        std::lock_guard<std::mutex> lock(state_mutex_);
+        task_in_progress_ = false;
+        has_coordinates_ = false;
+      }
+      goal_handle->abort(result);
+      return;
     }
-    goal_handle->abort(result);
-    return;
+  } else {
+    RCLCPP_WARN(LOGGER, "Execution disabled - solution published for visualization only");
+    RCLCPP_INFO(LOGGER, "To enable execution, launch with: execute:=true");
   }
   
   // Calculate execution time

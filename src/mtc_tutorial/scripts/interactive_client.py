@@ -88,6 +88,7 @@ def print_menu():
     print("\n" + "="*60)
     print("  MTC Interactive Task Client")
     print("="*60)
+    print("0. Move Home (SIMPLE TEST - cannot fail)")
     print("1. Pick and Place (default location)")
     print("2. Pick and Place (custom location)")
     print("3. Twist Knob (default location)")
@@ -144,6 +145,19 @@ def main(args=None):
             if choice == 'q':
                 print("Exiting...")
                 break
+            
+            elif choice == '0':
+                # Move Home - simple test that cannot fail
+                print("\n🏠 Move Home (Simple Test)")
+                print("This just moves the robot to its ready position.")
+                
+                # Dummy poses (not used for move_home)
+                target = Pose()
+                target.orientation.w = 1.0
+                place = Pose()
+                place.orientation.w = 1.0
+                
+                client.send_goal('move_home', target, place)
             
             elif choice == '1':
                 # Pick and place - default
