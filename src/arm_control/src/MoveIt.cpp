@@ -44,17 +44,25 @@ public:
   {
     //options will give you a warning that it's unused. apparently its helpful if we decide to remap topics
     //or node namespaces etc
+
+    //making callback groups to reduce deadlock
+    //Vision is Mutually Exclusive because the arm Node shouldn't be getting coordinates for the old goal item while the goal
+    //item is being updated using the service
+    rclcpp::CallbackGroup::SharedPtr vision_callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     auto topic_callback =
       [this](geometry_msgs::msg::PoseStamped::UniquePtr msg) -> void {
         //copy the value from the pointer
         goal_pose_=*msg;
         RCLCPP_INFO(this->get_logger(), "I heard x coord '%f'", goal_pose_.pose.position.x);
       };
+    rclcpp::SubscriptionOptions goal_pose_options;
+    goal_pose_options.callback_group = vision_callback_group;
     goal_pose_subscription =
-      this->create_subscription<geometry_msgs::msg::PoseStamped>("/goal_pose", 10, topic_callback);
+      this->create_subscription<geometry_msgs::msg::PoseStamped>("/goal_pose", 10, topic_callback, goal_pose_options);
 
+    //history_depth set to 10 in the off chance some kind of hardwware issue causes responses to be backed up
     update_goal_item_client_ =
-      this->create_client<arm_control::srv::UpdateGoalItem>("/update_goal_item");
+      this->create_client<arm_control::srv::UpdateGoalItem>("/update_goal_item", rclcpp::QoS(10),vision_callback_group);
 
     //Action Server Lambda Functions
     using namespace std::placeholders;
@@ -85,12 +93,16 @@ public:
       std::thread{execute_in_thread}.detach();
     };
     //Action Server Declaration
+    rclcpp::CallbackGroup::SharedPtr action_callback_group = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     this->action_server_ = rclcpp_action::create_server<ArmMovement>(
       this,
       "arm_movement",
       handle_goal,
       handle_cancel,
-      handle_accepted);
+      handle_accepted,
+      rcl_action_server_get_default_options(),
+      action_callback_group
+    );
 
     //FOR TESTING! PLS DELETE ONCE DONE!
     //to test if it can publish
