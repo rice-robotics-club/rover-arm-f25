@@ -87,10 +87,7 @@ public:
     const std::shared_ptr<GoalHandleArm> goal_handle
     )
     {
-      // this needs to return quickly to avoid blocking the executor,
-      // so we declare a lambda function to be called inside a new thread
-      auto execute_in_thread = [this, goal_handle](){return this->execute(goal_handle);};
-      std::thread{execute_in_thread}.detach();
+      this->execute(goal_handle);
     };
     //Action Server Declaration
     rclcpp::CallbackGroup::SharedPtr action_callback_group = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
@@ -106,26 +103,21 @@ public:
 
     //FOR TESTING! PLS DELETE ONCE DONE!
     //to test if it can publish
-    timer_ = this->create_wall_timer(
-      std::chrono::seconds(2),
-      [this]() {
-        //has to be in a thread or the callback is never processed
-        std::thread{[this](){
-          bool response=this->changeGoalItem("1");
-          RCLCPP_INFO(this->get_logger(), "Vision Responded with: %s", response ? "true" : "false");
-        }}.detach();
+    // timer_ = this->create_wall_timer(
+    //   std::chrono::seconds(2),
+    //   [this]() {
+    //     bool response=this->changeGoalItem("1");
+    //     RCLCPP_INFO(this->get_logger(), "Vision Responded with: %s", response ? "true" : "false");
         
-        timer_->cancel();  
-      });
+    //     timer_->cancel();  
+    //   });
 
     //to test if it can return false
     // timer_ = this->create_wall_timer(
     //   std::chrono::seconds(2),
     //   [this]() {
     //     //has to be in a thread or the callback is never processed
-    //     std::thread{[this](){
-    //       this->changeGoalItem("blah");  
-    //     }}.detach();
+    //     this->changeGoalItem("blah");  
     //     timer_->cancel();  
     //   });
   }
