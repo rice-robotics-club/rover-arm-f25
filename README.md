@@ -36,5 +36,7 @@ The vision terminal should print "Publishing goal for: BRICK"
 ### 6 November 2025
 - Forgot to update this. Created working /update_goal_item service, and /goal_pose topic.
 - Also created a working ArmMovement action Server within the MoveItNode node.
+### 12 January 2026
+- Fixed the Mutlithreading issues by using callback groups
 ## To Do
 - Make a dummy Teleop Node to issue commands to the moveItNode server
