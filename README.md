@@ -9,19 +9,15 @@ sudo apt install ros-$ROS_DISTRO-moveit-ros-planning-interface
 sudo apt install ros-$ROS_DISTRO-moveit-core
 ```
 # How to test
-Make package
+Build the image
 ```
 cd rover_arm_f25
-colcon build
-```
-Source the setup.bash
-```
-source install/setup.bash
+docker build -t thing .
 ```
 
 Run the nodes
 ```
-ros2 launch arm_control arm_communication.launch.py
+docker run -it --rm thing ros2 launch arm_control arm_communication.launch.py
 ```
 The moveItNode terminal should print "I heard x coord '1.000000'"\
 The vision terminal should print "X coord should be: 1.000000'"

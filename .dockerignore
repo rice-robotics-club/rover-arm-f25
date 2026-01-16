@@ -1,0 +1,19 @@
+# Git metadata
+.git
+.gitignore
+
+# IDE settings
+.vscode
+.idea
+
+# ROS Build Artifacts (Crucial to ignore)
+build/
+install/
+log/
+
+# Python cache
+__pycache__
+*.pyc
+
+# OS generated files
+.DS_Store
