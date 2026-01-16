@@ -103,14 +103,14 @@ public:
 
     //FOR TESTING! PLS DELETE ONCE DONE!
     //to test if it can publish
-    // timer_ = this->create_wall_timer(
-    //   std::chrono::seconds(2),
-    //   [this]() {
-    //     bool response=this->changeGoalItem("1");
-    //     RCLCPP_INFO(this->get_logger(), "Vision Responded with: %s", response ? "true" : "false");
+    timer_ = this->create_wall_timer(
+      std::chrono::seconds(2),
+      [this]() {
+        bool response=this->changeGoalItem("1");
+        RCLCPP_INFO(this->get_logger(), "Vision Responded with: %s", response ? "true" : "false");
         
-    //     timer_->cancel();  
-    //   });
+        timer_->cancel();  
+      });
 
     //to test if it can return false
     // timer_ = this->create_wall_timer(
@@ -154,31 +154,14 @@ private:
     if (!goal->attached_object.id.empty()){
       moveit_msgs::msg::CollisionObject attachedObject = goal->attached_object;
     }
-    auto promise = std::make_shared<std::promise<bool>>();
-    auto future = promise->get_future();
-    bool goalItemNotFound;
-    std::thread{[this, goal, promise](){
-        bool goalItemInSight = this->changeGoalItem(goal->goal_item_name);
-        promise->set_value(goalItemInSight);
-        //The rest of the code for Execute has to go into here otherwise we get some stupid memory memes.
-    }}.detach(); 
+    bool goalItemInSight = this->changeGoalItem(goal->goal_item_name);
 
-    // Poll without blocking
-    while (rclcpp::ok()) {
-      if (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-        //the changeGoalItem method returns true when the goal item is in sight, false otherwise
-        goalItemNotFound = !future.get();
-        break;
-      }
-      rclcpp::spin_some(this->get_node_base_interface());
-      loop_rate.sleep();
-    }
 
     //check for termiante
     if (shouldTerminate()){
       return;
     }
-    if (goalItemNotFound){
+    if (!goalItemInSight){
       result->success=false;
       result->error_code.val=MoveItErrorCodes::UNABLE_TO_AQUIRE_SENSOR_DATA;
       result->error_code.message = "Goal Item not in sight";
