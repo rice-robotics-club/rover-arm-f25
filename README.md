@@ -19,17 +19,12 @@ Source the setup.bash
 source install/setup.bash
 ```
 
-Run vision node 
+Run the nodes
 ```
-ros2 run arm_control vision
-```
-You should see "No goal item set"\
-Run the moveit node in a separate terminal
-```
-ros2 run arm_control moveItNode
+ros2 launch arm_control arm_communication.launch.py
 ```
 The moveItNode terminal should print "I heard x coord '1.000000'"\
-The vision terminal should print "Publishing goal for: BRICK"
+The vision terminal should print "X coord should be: 1.000000'"
 ## Changelog 
 ### 27 October 2025
 - Made working publisher and subscriber to goal_pose topic. 
