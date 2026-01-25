@@ -22,6 +22,6 @@ The vision terminal should print "X coord should be: 1.000000'"
 ### 12 January 2026
 - Fixed the Mutlithreading issues by using callback groups
 ### 15 January 2026 
-- Dockerized the code 
+- Dockerized the code   
 ## To Do
 - Make a dummy Teleop Node to issue commands to the moveItNode server
